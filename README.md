@@ -11,21 +11,21 @@
 		 - [ ] Vector derivation
 			 - [ ] Vector
 			 - [ ] Matrix
-	- [ ] graphql parser
-		- [ ] zig builtin type to graphql schema type
-			- [ ] normal type like i32, u32 and etc.
-			- [ ] pointer type means the nullable type of the child type
-			- [ ] auto check for casting
-		- [ ] zig custom type to graphql schema type
-			- [ ] struct type
-			- [ ] enum and union
-			- [ ] generic types
-		- [ ] zig funcions to graphql handlers
-		- [ ] plugin or middleware for exists http server
-	- [ ] ecs(should be designed like those ecs in rust)
-		- [ ] design is not ready yet
-	- [ ] renderer
-		- [ ] design is not ready yet
-	- [ ] utils
-		- [ ] a Optional type contains ownship of inside value(actually being a wrapper around the official one)
-		- [ ]  more utils will be added
+- [ ] graphql parser
+	- [ ] zig builtin type to graphql schema type
+		- [ ] normal type like i32, u32 and etc.
+		- [ ] pointer type means the nullable type of the child type
+		- [ ] auto check for casting
+	- [ ] zig custom type to graphql schema type
+		- [ ] struct type
+		- [ ] enum and union
+		- [ ] generic types
+	- [ ] zig funcions to graphql handlers
+	- [ ] plugin or middleware for exists http server
+- [ ] ecs(should be designed like those ecs in rust)
+	- [ ] design is not ready yet
+- [ ] renderer
+	- [ ] design is not ready yet
+- [ ] utils
+	- [ ] a Optional type contains ownship of inside value(actually being a wrapper around the official one)
+	- [ ]  more utils will be added
