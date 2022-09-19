@@ -57,13 +57,13 @@ pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T
             switch(vec1) {
                 .row => |r| {
                     var index: usize = 0;
-                    while(index < row):(index += 1) {
+                    while(index < col):(index += 1) {
                         res += r[index] * vec2.row[index];
                     }
                 },
                 .col => |c| {
                     var index: usize = 0;
-                    while(index < col):(index += 1) {
+                    while(index < row):(index += 1) {
                         res += c[index] * vec2.row[index];
                     }
                 }
