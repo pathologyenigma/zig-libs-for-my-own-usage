@@ -293,10 +293,10 @@ pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T
         /// using anytype here is not recommended, but I running out of solutions
         /// the return type is a little be weird, but actually valid
         pub fn mul(self: *Self, rhs: anytype) return_type:{
-            if(@TypeOf(rhs) == ColVector) break :return_type ColVector;
+            if(@TypeOf(rhs) == RowType) break :return_type ColVector;
             break :return_type *Matrix(row, @typeInfo(@TypeOf(rhs)).Pointer.child.col_size(), T);
         } {
-            if(@TypeOf(rhs) == ColVector) {
+            if(@TypeOf(rhs) == RowType) {
                 var res: ColVector = init: {
                     var ptr: [row]T = undefined;
                     for(ptr) |*p, i| {
