@@ -1,6 +1,7 @@
 const math = @import("./math/math.zig");
 const std = @import("std");
 const Matrix = math.Matrix;
+const gql = @import("./gql/gql.zig");
 
 test "Matrix" {
     var m1 = Matrix(4, 4, f32).init(.{ .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 } });
@@ -25,7 +26,24 @@ test "Matrix" {
     var m5 = m3.mul(m4);
     defer m5.deinit();
     m5.print();
-    var v1 = @Vector(4, f32){1,2,3,4};
+    var v1 = @Vector(4, f32){ 1, 2, 3, 4 };
     var v2 = m5.mul(v1);
-    std.log.warn("{}",.{v2});
+    std.log.warn("{}", .{v2});
+}
+
+test "scalar" {
+    const A = struct {
+        // const json = std.json;
+        const Self = @This();
+        comptime type_name: []const u8 = "Null",
+        pub fn serialize(self: *Self) []const u8 {
+            _ = self;
+            return "null";
+        }
+        pub fn deserialize(input: []const u8) Self {
+            _ = input;
+            return Self{};
+        }
+    };
+    try std.testing.expect(gql.isScalarType(A));
 }
