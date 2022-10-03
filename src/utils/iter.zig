@@ -13,3 +13,18 @@ pub fn isIteratorOf(comptime iter: type, comptime inner: type) bool {
     if(return_type.? != ?inner) return false;
     return true;
 }
+/// an empty iterator implementation
+/// will always return null
+pub fn EmptyIter(comptime T: type) type {
+    return struct {
+        pub fn next() ?T {
+            return null;
+        }
+    };
+}
+
+const testing = @import("std").testing;
+test "iter" {
+    const EmptyIterI32 = iter.EmptyIter(i32);
+    try testing.expect(iter.isIteratorOf(EmptyIterI32, i32));
+}
