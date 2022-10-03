@@ -2,12 +2,12 @@ const std = @import("std");
 const testing = std.testing;
 
 /// a matrix implementation based on standard library vector type
-/// onlu support numberics type for T
+/// only support numberics type for T
 /// type check not implemented for type definitions
 /// but will be check when calling init function
 /// a print function is provided for debug usage
 /// not thread safe, but you can only got one pointer at a time
-/// thread safe implementation will be available when I add ownship check utils to my library
+/// thread safe implementation will be available when I add ownership check utils to my library
 pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T: type) type {
     return struct {
         const RowType = @Vector(col, T);
