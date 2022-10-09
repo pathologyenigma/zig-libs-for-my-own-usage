@@ -1,4 +1,3 @@
-[![(https://img.shields.io/badge/docs-latest-blue.svg)](https://pathologyenigma.github.io/zig-libs-for-my-own-usage/)]
 # *some zig libs for my own usage*
 
 > all libs here is for my own usage, so there will not be extra docs but the doc comment, no examples is included either, if you looking for some libs that is full documented or having a lot of beginner's example, this repository may not be your best choice
