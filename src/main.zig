@@ -1,8 +1,8 @@
-const math = @import("math/math.zig");
+pub const math = @import("math/math.zig");
 const std = @import("std");
-const Matrix = math.Matrix;
-const gql = @import("gql/gql.zig");
-const iter = @import("utils/iter.zig");
+pub const Matrix = math.Matrix;
+pub const gql = @import("gql/gql.zig");
+pub const iter = @import("utils/iter.zig");
 test "Matrix" {
     var m1 = Matrix(4, 4, f32).init(.{ .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 } });
     defer m1.deinit();

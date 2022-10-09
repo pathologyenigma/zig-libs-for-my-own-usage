@@ -1,6 +1,7 @@
 const gql = @This();
 const std = @import("std");
 const trait = std.meta.trait;
+pub const parser = @import("parser.zig");
 /// type checker for scalar type
 /// return false immediately when one item check is failed
 /// you can replace return false things to custom error to show more info

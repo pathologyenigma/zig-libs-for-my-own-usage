@@ -23,7 +23,7 @@ pub fn EmptyIter(comptime T: type) type {
     };
 }
 
-const testing = @import("std").testing;
+const testing = std.testing;
 test "iter" {
     const EmptyIterI32 = EmptyIter(i32);
     try testing.expect(isIteratorOf(EmptyIterI32, i32));
