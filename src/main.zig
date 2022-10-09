@@ -47,4 +47,3 @@ test "scalar" {
     };
     try std.testing.expect(gql.isScalarType(A));
 }
-
