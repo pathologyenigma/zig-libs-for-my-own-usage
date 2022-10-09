@@ -1,8 +1,8 @@
-const math = @import("./math/math.zig");
+const math = @import("math/math.zig");
 const std = @import("std");
 const Matrix = math.Matrix;
-const gql = @import("./gql/gql.zig");
-
+const gql = @import("gql/gql.zig");
+const iter = @import("utils/iter.zig");
 test "Matrix" {
     var m1 = Matrix(4, 4, f32).init(.{ .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 } });
     defer m1.deinit();
@@ -47,3 +47,4 @@ test "scalar" {
     };
     try std.testing.expect(gql.isScalarType(A));
 }
+

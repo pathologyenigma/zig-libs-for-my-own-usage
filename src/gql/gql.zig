@@ -13,6 +13,8 @@ const trait = std.meta.trait;
 /// }
 /// but a little more, because we expect type to having a type_name field
 /// which is a comptime []const u8
+/// notice: this type checker may not being used outside of this library
+/// scalar type is only need to check when default parse rule is failed
 pub fn isScalarType(comptime T: type) bool {
     std.debug.print("\ntype check starting...\n", .{});
     if (@typeInfo(T) != .Struct) {
