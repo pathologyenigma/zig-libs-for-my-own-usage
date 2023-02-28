@@ -167,12 +167,14 @@ pub fn Option(comptime T: type) type {
             if (self.is_some()) Self.allocator.destroy(self.value.?);
             self.value = null;
         }
+        /// comparable trait implementation
+        /// call this function to cast this type to a self compatible type
         pub const ComparableSelf = utils.Comparable(*Self).impl(null)(.{
             .cmpFn = cmp,
         });
         /// try to implement a comparable for Option type
         /// inner type is must be comparable or implement Comparable
-        pub fn cmp(self: *Self, other: Self) utils.CompareResult {
+        fn cmp(self: *Self, other: Self) utils.CompareResult {
             if (self.is_none()) {
                 if(other.is_none()) {
                     return .Equal;
