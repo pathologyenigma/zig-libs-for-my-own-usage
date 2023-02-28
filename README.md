@@ -26,5 +26,5 @@
 - [ ] renderer
 	- [ ] design is not ready yet
 - [ ] utils
-	- [ ] a Optional type contains ownship of inside value(actually being a wrapper around the official one)
+	- [x] a Optional type contains ownship of inside value(actually being a wrapper around the official one)
 	- [x] iterator traits 
