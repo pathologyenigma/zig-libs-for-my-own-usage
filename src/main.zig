@@ -2,48 +2,90 @@ pub const math = @import("math/math.zig");
 const std = @import("std");
 pub const Matrix = math.Matrix;
 pub const gql = @import("gql/gql.zig");
-pub const iter = @import("utils/iter.zig");
-test "Matrix" {
-    var m1 = Matrix(4, 4, f32).init(.{ .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 } });
-    defer m1.deinit();
-    m1.print();
-    var m2 = Matrix(4, 4, f32).init(.{ 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4 });
-    defer m2.deinit();
-    std.log.warn("{d}", .{m2.val.len});
-    m2.print();
-    var m3 = m1.add(m2);
-    defer m3.deinit();
-    std.log.warn("{d}", .{m3.val.len});
-    m3.print();
-    m3.add_assign(m3);
-    std.log.warn("{d}", .{m3.val.len});
-    m3.print();
-    var m4 = m3.reduce(m2);
-    defer m4.deinit();
-    m4.print();
-    m4.reduce_assign(m3);
-    m4.print();
-    var m5 = m3.mul(m4);
-    defer m5.deinit();
-    m5.print();
-    var v1 = @Vector(4, f32){ 1, 2, 3, 4 };
-    var v2 = m5.mul(v1);
-    std.log.warn("{}", .{v2});
+pub const utils = @import("utils/utils.zig");
+comptime {
+    _ = math;
+    _ = Matrix;
+    _ = gql;
+    _ = utils;
 }
 
-test "scalar" {
-    const A = struct {
-        // const json = std.json;
+pub fn Range(comptime T: type) type {
+    const input_type_info = @typeInfo(T);
+    switch (input_type_info) {
+        .Int, .Float, .Bool => {},
+        else => {
+            @compileError("Range among non-numeric types is not supported");
+        },
+    }
+    return struct {
+        start: T = 0,
+        end: T,
+        step: T = 1,
         const Self = @This();
-        comptime type_name: []const u8 = "Null",
-        pub fn serialize(self: *Self) []const u8 {
-            _ = self;
-            return "null";
+        pub usingnamespace utils.Iterator(*Self, T, .{
+            .next = next,
+        });
+        pub const ComparableSelf = utils.Comparable(*Self).impl(null)(.{
+            .cmpFn = cmp,
+        });
+        pub const ComparableT = utils.Comparable(*Self).impl(T)(.{
+            .cmpFn = cmpT,
+        });
+        fn next(self: *Self) ?T {
+            if (self.start >= self.end) return null;
+            const result = self.start;
+            self.start += self.step;
+            return result;
         }
-        pub fn deserialize(input: []const u8) Self {
-            _ = input;
-            return Self{};
+        fn cmp(self: *Self, rhs: *Self) utils.CompareResult {
+            if (((self.end - self.start) / self.step) - ((rhs.end - rhs.start) / rhs.step) > 0) {
+                return .Greater;
+            }
+            if (((self.end - self.start) / self.step) - ((rhs.end - rhs.start) / rhs.step) < 0) {
+                return .Less;
+            }
+            return .Equal;
+        }
+        fn cmpT(self: *Self, rhs: T) utils.CompareResult {
+            if (self.start > rhs) return .Greater;
+            if (self.end < rhs) return .Less;
+            return .Equal;
         }
     };
-    try std.testing.expect(gql.isScalarType(A));
+}
+// something I wish will work in the future version of zig
+// pub const Infinity = struct {
+//     is_negative: bool = false,
+//     const Self = @This();
+//     pub usingnamespace utils.ComparableManager(Self).init().where(.{ .RHS = null })(.{ .cmpFn = struct {
+//         pub fn cmp(self: Self, rhs: Self) utils.CompareResult {
+//             if (self.is_negative == rhs.is_negative) {
+//                 return .Equal;
+//             } else if (self.is_negative) {
+//                 return .Less;
+//             } else if (!self.is_negative) return .Greater;
+//         }
+//     }.cmp }).end();
+// };
+
+test "Iterator" {
+    var range = Range(u32){ .end = 5 };
+    const iter = range.iterator();
+    try std.testing.expectEqual(@as(?u32, 0), iter.next());
+    try std.testing.expectEqual(@as(?u32, 1), iter.next());
+    try std.testing.expectEqual(@as(?u32, 2), iter.next());
+    try std.testing.expectEqual(@as(?u32, 3), iter.next());
+    try std.testing.expectEqual(@as(?u32, 4), iter.next());
+    try std.testing.expectEqual(@as(?u32, null), iter.next());
+    try std.testing.expectEqual(@as(?u32, null), iter.next());
+}
+test "Comparable" {
+    var range_1 = Range(u32){ .end = 5 };
+    var range_2 = Range(u32){ .end = 4 };
+    try std.testing.expectEqual(range_1.ComparableSelf().cmp(&range_2), .Greater);
+    try std.testing.expectEqual(range_1.ComparableT().cmp(3), .Equal);
+    // something I wish will work in the future version of zig
+    // var infinity = Infinity {};
+    // try std.testing.expectEqual(infinity.cmp(Infinity)(infinity), .Equal);
 }
