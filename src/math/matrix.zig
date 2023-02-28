@@ -9,6 +9,13 @@ const testing = std.testing;
 /// not thread safe, but you can only got one pointer at a time
 /// thread safe implementation will be available when I add ownership check utils to my library
 pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T: type) type {
+    const typeInfo = @typeInfo(T);
+    switch (typeInfo) {
+        .Int, .Float, .Bool => {},
+        else => {
+            @compileError("should only numeric types");
+        },
+    }
     return struct {
         const RowType = @Vector(col, T);
         const Self = @This();
@@ -85,20 +92,20 @@ pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T
                 return .InvalidFormat;
             }
             if (ArgsTypeInfo.Struct.fields.len != col * row) {
-                if (@typeInfo(ArgsTypeInfo.Struct.fields[0].field_type) != .Struct) {
+                if (@typeInfo(ArgsTypeInfo.Struct.fields[0].type) != .Struct) {
                     return .AmountNotMatch;
                 }
                 if (ArgsTypeInfo.Struct.fields.len != row) {
                     return .AmountNotMatch;
                 }
                 inline for (ArgsTypeInfo.Struct.fields) |field| {
-                    switch (@typeInfo(field.field_type)) {
+                    switch (@typeInfo(field.type)) {
                         .Struct => {
-                            if (@typeInfo(field.field_type).Struct.fields.len != col) {
+                            if (@typeInfo(field.type).Struct.fields.len != col) {
                                 return .AmountNotMatch;
                             }
-                            inline for (@typeInfo(field.field_type).Struct.fields) |field_| {
-                                switch (@typeInfo(field_.field_type)) {
+                            inline for (@typeInfo(field.type).Struct.fields) |field_| {
+                                switch (@typeInfo(field_.type)) {
                                     .Float, .Int, .ComptimeInt, .ComptimeFloat => {
                                         continue;
                                     },
@@ -110,10 +117,10 @@ pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T
                             return .StructStruct;
                         },
                         .Array => {
-                            if (@typeInfo(field.field_type).Array.len != col) {
+                            if (@typeInfo(field.type).Array.len != col) {
                                 return .AmountNotMatch;
                             }
-                            switch (@typeInfo(@typeInfo(field.field_type).Array.child)) {
+                            switch (@typeInfo(@typeInfo(field.type).Array.child)) {
                                 .Float, .Int, .ComptimeInt, .ComptimeFloat => {
                                     return .StructStruct;
                                 },
@@ -129,7 +136,7 @@ pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T
                 }
             } else {
                 inline for (ArgsTypeInfo.Struct.fields) |field| {
-                    switch (@typeInfo(field.field_type)) {
+                    switch (@typeInfo(field.type)) {
                         .Struct, .Array => {
                             return .AmountNotMatch;
                         },
@@ -174,7 +181,7 @@ pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T
             var self: *Self = defalutAllocator.create(Self) catch @panic("failed to create memory");
             switch (check_result) {
                 .StructNumberic => {
-                    inline for (args) |v, i| {
+                    inline for (args, 0..) |v, i| {
                         self.val[i / col][i % col] = v;
                     }
                 },
@@ -234,7 +241,7 @@ pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T
             if (col_index >= col) @panic("index out of range");
             var res = init: {
                 var ptr: [row]T = undefined;
-                for (ptr) |*p, i| {
+                for (&ptr, 0..) |*p, i| {
                     p.* = self.val[i][col_index];
                 }
                 break :init ptr;
@@ -292,14 +299,15 @@ pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T
         /// the row size is not known at compile time
         /// using anytype here is not recommended, but I running out of solutions
         /// the return type is a little be weird, but actually valid
-        pub inline fn mul(self: *Self, rhs: anytype) return_type: {
+        /// this function could not be inline because of the multiplication for Matrix is recursive
+        pub fn mul(self: *Self, rhs: anytype) return_type: {
             if (@TypeOf(rhs) == RowType) break :return_type ColVector;
             break :return_type *Matrix(row, @typeInfo(@TypeOf(rhs)).Pointer.child.col_size(), T);
         } {
             if (@TypeOf(rhs) == RowType) {
                 var res: ColVector = init: {
                     var ptr: [row]T = undefined;
-                    for (ptr) |*p, i| {
+                    for (&ptr, 0..) |*p, i| {
                         p.* = dot(Vector{ .row = self.get_row(i) }, Vector{ .row = rhs });
                     }
                     break :init ptr;
@@ -309,7 +317,7 @@ pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T
             if (isValidMulMatrix(@TypeOf(rhs))) {
                 var res: *Matrix(row, @typeInfo(@TypeOf(rhs)).Pointer.child.col_size(), T) = init: {
                     var array: [row]@Vector(@typeInfo(@TypeOf(rhs)).Pointer.child.col_size(), T) = undefined;
-                    for (array) |*p, i| {
+                    for (&array, 0..) |*p, i| {
                         p.* = self.mul(rhs.get_col(i));
                     }
                     break :init Self.from_array(array);
@@ -319,4 +327,31 @@ pub fn Matrix(comptime row: comptime_int, comptime col: comptime_int, comptime T
             @panic("not a valid type");
         }
     };
+}
+test "Matrix" {
+    var m1 = Matrix(4, 4, f32).init(.{ .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 }, .{ 1, 2, 3, 4 } });
+    defer m1.deinit();
+    m1.print();
+    var m2 = Matrix(4, 4, f32).init(.{ 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4 });
+    defer m2.deinit();
+    std.log.warn("{d}", .{m2.val.len});
+    m2.print();
+    var m3 = m1.add(m2);
+    defer m3.deinit();
+    std.log.warn("{d}", .{m3.val.len});
+    m3.print();
+    m3.add_assign(m3);
+    std.log.warn("{d}", .{m3.val.len});
+    m3.print();
+    var m4 = m3.reduce(m2);
+    defer m4.deinit();
+    m4.print();
+    m4.reduce_assign(m3);
+    m4.print();
+    var m5 = m3.mul(m4);
+    defer m5.deinit();
+    m5.print();
+    var v1 = @Vector(4, f32){ 1, 2, 3, 4 };
+    var v2 = m5.mul(v1);
+    std.log.warn("{}", .{v2});
 }
