@@ -111,317 +111,173 @@
     </style>
 </head>
 <body>
-<pre><code><span class="line" id="L1"><span class="tok-comment">// //! gql parser aims to parse zig code to schema string</span>
+<pre><code><span class="line" id="L1"><span class="tok-comment">//! gql parser aims to parse zig code to schema string</span></span>
+<span class="line" id="L2"><span class="tok-comment">//! and parse query string to zig variables</span></span>
+<span class="line" id="L3"><span class="tok-comment">//! experimental right now</span></span>
+<span class="line" id="L4"><span class="tok-kw">const</span> gql = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;gql.zig&quot;</span>);</span>
+<span class="line" id="L5"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line" id="L6"><span class="tok-kw">const</span> parser = <span class="tok-builtin">@This</span>();</span>
+<span class="line" id="L7"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> ParseContext = <span class="tok-kw">enum</span> {</span>
+<span class="line" id="L8">    IsInnerTypeOfType,</span>
+<span class="line" id="L9">    IsInnerTypeOfPointer,</span>
+<span class="line" id="L10">    IsInnerTypeOfPointerAndType,</span>
+<span class="line" id="L11">    <span class="tok-kw">const</span> Self = <span class="tok-builtin">@This</span>();</span>
+<span class="line" id="L12">    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">join</span>(self: *Self, rhs: *Self) !Self {</span>
+<span class="line" id="L13">        <span class="tok-kw">return</span> <span class="tok-kw">switch</span> (self) {</span>
+<span class="line" id="L14">            .IsInnerTypeOfType =&gt; {</span>
+<span class="line" id="L15">                <span class="tok-kw">switch</span> (rhs) {</span>
+<span class="line" id="L16">                    .IsInnerTypeOfType =&gt; .IsInnerTypeOfType,</span>
+<span class="line" id="L17">                    .IsInnerTypeOfPointer =&gt; .IsInnerTypeOfPointerAndType,</span>
+<span class="line" id="L18">                    .IsInnerTypeOfPointerAndType =&gt; .IsInnerTypeOfPointerAndType,</span>
+<span class="line" id="L19">                }</span>
+<span class="line" id="L20">            },</span>
+<span class="line" id="L21">            .IsInnerTypeOfPointer =&gt; {</span>
+<span class="line" id="L22">                <span class="tok-kw">switch</span> (rhs) {</span>
+<span class="line" id="L23">                    .IsInnerTypeOfType =&gt; .IsInnerTypeOfPointerAndType,</span>
+<span class="line" id="L24">                    .IsInnerTypeOfPointer =&gt; .IsInnerTypeOfPointer,</span>
+<span class="line" id="L25">                    .IsInnerTypeOfPointerAndType =&gt; .IsInnerTypeOfPointerAndType,</span>
+<span class="line" id="L26">                }</span>
+<span class="line" id="L27">            },</span>
+<span class="line" id="L28">            .IsInnerTypeOfPointerAndType =&gt; .IsInnerTypeOfPointerAndType,</span>
+<span class="line" id="L29">        };</span>
+<span class="line" id="L30">    }</span>
+<span class="line" id="L31">};</span>
+<span class="line" id="L32"><span class="tok-comment">// /// output type should be type xxxx {}</span>
 </span>
-<span class="line" id="L2"><span class="tok-comment">// //! and parse query string to zig variables</span>
+<span class="line" id="L33"><span class="tok-comment">// pub fn gqlParseType(comptime T: type, comptime ctx: ?ParseContext) []const u8 {}</span>
 </span>
-<span class="line" id="L3"><span class="tok-comment">// //! cause that Query Mutation and Subscription are also schema objects</span>
+<span class="line" id="L34"><span class="tok-comment">// /// will parse the type behind the pointer</span>
 </span>
-<span class="line" id="L4"><span class="tok-comment">// //! this will works for them too</span>
+<span class="line" id="L35"><span class="tok-comment">// pub fn gqlParsePointType(comptime T: type, comptime ctx: ?ParseContext) []const u8 {}</span>
 </span>
-<span class="line" id="L5"><span class="tok-comment">// const gql = @import(&quot;gql.zig&quot;);</span>
+<span class="line" id="L36"><span class="tok-comment">// /// output type should be interface xxxx {}</span>
 </span>
-<span class="line" id="L6"><span class="tok-comment">// const std = @import(&quot;std&quot;);</span>
+<span class="line" id="L37"><span class="tok-comment">// pub fn gqlParseInterface(comptime T: type, comptime ctx: ?ParseContext) []const u8 {}</span>
 </span>
-<span class="line" id="L7"><span class="tok-comment">// const parser = @This();</span>
+<span class="line" id="L38"><span class="tok-comment">// /// output type should be union = xxx | xxx</span>
 </span>
-<span class="line" id="L8"></span>
-<span class="line" id="L9"><span class="tok-comment">// /// zig tyoe to graphql type definitions</span>
+<span class="line" id="L39"><span class="tok-comment">// pub fn gqlParseUnion(comptime T: type, comptime ctx: ?ParseContext) []const u8 {</span>
 </span>
-<span class="line" id="L10"><span class="tok-comment">// /// output type is auto-detected</span>
+<span class="line" id="L40"><span class="tok-comment">//     if (ctx == null) {</span>
 </span>
-<span class="line" id="L11"><span class="tok-comment">// /// like struct will become object</span>
+<span class="line" id="L41"><span class="tok-comment">//         var res = &quot;union &quot;;</span>
 </span>
-<span class="line" id="L12"><span class="tok-comment">// /// union will become union</span>
+<span class="line" id="L42"><span class="tok-comment">//         res += @typeName(T);</span>
 </span>
-<span class="line" id="L13"><span class="tok-comment">// /// enum will become enum</span>
+<span class="line" id="L43"><span class="tok-comment">//         res += &quot;=&quot;;</span>
 </span>
-<span class="line" id="L14"><span class="tok-comment">// /// scalar type will become scalar type</span>
+<span class="line" id="L44"><span class="tok-comment">//         const typeInfo = @typeInfo(T);</span>
 </span>
-<span class="line" id="L15"><span class="tok-comment">// pub fn zigTypeToGraphqlType(comptime T: type, comptime subTypeOfOptional: bool) []const u8 {</span>
+<span class="line" id="L45"><span class="tok-comment">//         switch (typeInfo) {</span>
 </span>
-<span class="line" id="L16"><span class="tok-comment">//     const typeInfo = @typeInfo(T);</span>
+<span class="line" id="L46"><span class="tok-comment">//             .Union =&gt; |u|{</span>
 </span>
-<span class="line" id="L17"><span class="tok-comment">//     if (gql.isScalarType(T)) return res: {</span>
+<span class="line" id="L47"><span class="tok-comment">//                 for (u.fields) |field| {</span>
 </span>
-<span class="line" id="L18"><span class="tok-comment">//         if (subTypeOfOptional) break :res T.type_name;</span>
+<span class="line" id="L48"><span class="tok-comment">//                     switch (@typeInfo(field.field_type)) {</span>
 </span>
-<span class="line" id="L19"><span class="tok-comment">//         break :res T.type_name ++ &quot;!&quot;;</span>
+<span class="line" id="L49"><span class="tok-comment">//                         .Struct, .Union, .Enum, .Int, .Float, .ComptimeFloat, .ComptimeInt =&gt; {</span>
 </span>
-<span class="line" id="L20"><span class="tok-comment">//     };</span>
+<span class="line" id="L50"><span class="tok-comment">//                             res += &quot; &quot; + field.name;</span>
 </span>
-<span class="line" id="L21"></span>
-<span class="line" id="L22"><span class="tok-comment">//     switch (typeInfo) {</span>
+<span class="line" id="L51"><span class="tok-comment">//                         },</span>
 </span>
-<span class="line" id="L23"><span class="tok-comment">//         .Type, .Void, .NoReturn =&gt; {</span>
+<span class="line" id="L52"><span class="tok-comment">//                         .Pointer =&gt; |p| {</span>
 </span>
-<span class="line" id="L24"><span class="tok-comment">//             @compileError(&quot;not supported type to parse&quot;);</span>
+<span class="line" id="L53"><span class="tok-comment">//                             if (T == []const u8) {</span>
 </span>
-<span class="line" id="L25"><span class="tok-comment">//         },</span>
+<span class="line" id="L54"><span class="tok-comment">//                                 res += &quot; String&quot;;</span>
 </span>
-<span class="line" id="L26"><span class="tok-comment">//         .ComptimeFloat, .ComptimeInt =&gt; {</span>
+<span class="line" id="L55"><span class="tok-comment">//                             } else {</span>
 </span>
-<span class="line" id="L27"><span class="tok-comment">//             @compileError(</span>
+<span class="line" id="L56"><span class="tok-comment">//                                 if (p.size != .One) {</span>
 </span>
-<span class="line" id="L28"><span class="tok-comment">//                 \\ compile time value is not able to deserialize from runtime.</span>
+<span class="line" id="L57"><span class="tok-comment">//                                     @compileError(&quot;array is not supported in graphql union&quot;);</span>
 </span>
-<span class="line" id="L29"><span class="tok-comment">//                 \\ using the same type runtime value instead</span>
+<span class="line" id="L58"><span class="tok-comment">//                                 }</span>
 </span>
-<span class="line" id="L30"><span class="tok-comment">//             );</span>
+<span class="line" id="L59"><span class="tok-comment">//                                 res += gqlParsePointType(@Type(p), .IsInnerTypeOfType);</span>
 </span>
-<span class="line" id="L31"><span class="tok-comment">//         },</span>
+<span class="line" id="L60"><span class="tok-comment">//                             }</span>
 </span>
-<span class="line" id="L32"><span class="tok-comment">//         .Undefined, .Null =&gt; {</span>
+<span class="line" id="L61"><span class="tok-comment">//                         },</span>
 </span>
-<span class="line" id="L33"><span class="tok-comment">//             @compileError(</span>
+<span class="line" id="L62"><span class="tok-comment">//                         else =&gt; {</span>
 </span>
-<span class="line" id="L34"><span class="tok-comment">//                 \\ undefined and null value is not supported in the graphql side</span>
+<span class="line" id="L63"><span class="tok-comment">//                             comptimeError(&quot;not supported field type for graphql union&quot;);</span>
 </span>
-<span class="line" id="L35"><span class="tok-comment">//                 \\ if you really need some type to describe for no return from the api</span>
+<span class="line" id="L64"><span class="tok-comment">//                         },</span>
 </span>
-<span class="line" id="L36"><span class="tok-comment">//                 \\ try to declare a scalar type about it</span>
+<span class="line" id="L65"><span class="tok-comment">//                     }</span>
 </span>
-<span class="line" id="L37"><span class="tok-comment">//             );</span>
+<span class="line" id="L66"><span class="tok-comment">//                     res += field.name + &quot;\n&quot;;</span>
 </span>
-<span class="line" id="L38"><span class="tok-comment">//         },</span>
+<span class="line" id="L67"><span class="tok-comment">//                 }</span>
 </span>
-<span class="line" id="L39"><span class="tok-comment">//         .Vector =&gt; {</span>
+<span class="line" id="L68"><span class="tok-comment">//                 res += &quot;}&quot;;</span>
 </span>
-<span class="line" id="L40"><span class="tok-comment">//             @compileError(</span>
+<span class="line" id="L69"><span class="tok-comment">//             },</span>
 </span>
-<span class="line" id="L41"><span class="tok-comment">//                 \\ Vector type is not supported in the current version of this project</span>
+<span class="line" id="L70"><span class="tok-comment">//             else =&gt; @compileError(&quot;only allow union right here&quot;),</span>
 </span>
-<span class="line" id="L42"><span class="tok-comment">//                 \\ also Vector type in zig is not the same as vecoter type in c++ std lib or rust's Vec type</span>
+<span class="line" id="L71"><span class="tok-comment">//         }</span>
 </span>
-<span class="line" id="L43"><span class="tok-comment">//                 \\ it is static sized simd vector, try arraylist if you want some dynamic size array</span>
+<span class="line" id="L72"><span class="tok-comment">//         return res;</span>
 </span>
-<span class="line" id="L44"><span class="tok-comment">//             );</span>
+<span class="line" id="L73"><span class="tok-comment">//     } else {</span>
 </span>
-<span class="line" id="L45"><span class="tok-comment">//         },</span>
+<span class="line" id="L74"><span class="tok-comment">//         return @typeName(T);</span>
 </span>
-<span class="line" id="L46"><span class="tok-comment">//         .Frame, .AnyFrame =&gt; {</span>
+<span class="line" id="L75"><span class="tok-comment">//     }</span>
 </span>
-<span class="line" id="L47"><span class="tok-comment">//             @compileError(</span>
+<span class="line" id="L76"><span class="tok-comment">// }</span>
 </span>
-<span class="line" id="L48"><span class="tok-comment">//                 \\ frame type are not some thing that could be parsed to gql type</span>
+<span class="line" id="L77"><span class="tok-comment">// /// output type should be enum xxx {}</span>
 </span>
-<span class="line" id="L49"><span class="tok-comment">//                 \\ and you don't have to</span>
+<span class="line" id="L78"><span class="tok-comment">// pub fn gqlParseEnum(comptime T: type, comptime ctx: ?ParseContext) []const u8 {</span>
 </span>
-<span class="line" id="L50"><span class="tok-comment">//             );</span>
+<span class="line" id="L79"><span class="tok-comment">//     if (ctx == null) {</span>
 </span>
-<span class="line" id="L51"><span class="tok-comment">//         },</span>
+<span class="line" id="L80"><span class="tok-comment">//         var res = &quot;enum &quot;;</span>
 </span>
-<span class="line" id="L52"><span class="tok-comment">//         .Opaque =&gt; {</span>
+<span class="line" id="L81"><span class="tok-comment">//         res += @typeName(T);</span>
 </span>
-<span class="line" id="L53"><span class="tok-comment">//             @compileError(</span>
+<span class="line" id="L82"><span class="tok-comment">//         res += &quot;{\n&quot;;</span>
 </span>
-<span class="line" id="L54"><span class="tok-comment">//                 \\ opaque type are not actually zig type</span>
+<span class="line" id="L83"><span class="tok-comment">//         const typeInfo = @typeInfo(T);</span>
 </span>
-<span class="line" id="L55"><span class="tok-comment">//                 \\ try to implemente a scalar type for it</span>
+<span class="line" id="L84"><span class="tok-comment">//         switch (typeInfo) {</span>
 </span>
-<span class="line" id="L56"><span class="tok-comment">//                 \\ if you want to parse it</span>
+<span class="line" id="L85"><span class="tok-comment">//             .Enum =&gt; |e| {</span>
 </span>
-<span class="line" id="L57"><span class="tok-comment">//             );</span>
+<span class="line" id="L86"><span class="tok-comment">//                 for (e.fields) |field| {</span>
 </span>
-<span class="line" id="L58"><span class="tok-comment">//         },</span>
+<span class="line" id="L87"><span class="tok-comment">//                     res += field.name + &quot;\n&quot;;</span>
 </span>
-<span class="line" id="L59"><span class="tok-comment">//         .EnumLiteral =&gt; {</span>
+<span class="line" id="L88"><span class="tok-comment">//                 }</span>
 </span>
-<span class="line" id="L60"><span class="tok-comment">//             @compileError(</span>
+<span class="line" id="L89"><span class="tok-comment">//                 res += &quot;}&quot;;</span>
 </span>
-<span class="line" id="L61"><span class="tok-comment">//                 \\ using enum or union instead</span>
+<span class="line" id="L90"><span class="tok-comment">//             },</span>
 </span>
-<span class="line" id="L62"><span class="tok-comment">//             );</span>
+<span class="line" id="L91"><span class="tok-comment">//             else =&gt; @compleError(&quot;only allow enum right here&quot;),</span>
 </span>
-<span class="line" id="L63"><span class="tok-comment">//         },</span>
+<span class="line" id="L92"><span class="tok-comment">//         }</span>
 </span>
-<span class="line" id="L64"><span class="tok-comment">//         .Bool =&gt; {</span>
+<span class="line" id="L93"><span class="tok-comment">//         return res;</span>
 </span>
-<span class="line" id="L65"><span class="tok-comment">//             return res: {</span>
+<span class="line" id="L94"><span class="tok-comment">//     } else {</span>
 </span>
-<span class="line" id="L66"><span class="tok-comment">//                 if (subTypeOfOptional) break :res &quot;Boolean&quot;;</span>
+<span class="line" id="L95"><span class="tok-comment">//         return @typeName(T);</span>
 </span>
-<span class="line" id="L67"><span class="tok-comment">//                 break :res &quot;Boolean!&quot;;</span>
+<span class="line" id="L96"><span class="tok-comment">//     }</span>
 </span>
-<span class="line" id="L68"><span class="tok-comment">//             };</span>
+<span class="line" id="L97"><span class="tok-comment">// }</span>
 </span>
-<span class="line" id="L69"><span class="tok-comment">//         },</span>
+<span class="line" id="L98"><span class="tok-comment">// /// zig's builtin type to gql type</span>
 </span>
-<span class="line" id="L70"><span class="tok-comment">//         .Int =&gt; {</span>
+<span class="line" id="L99"><span class="tok-comment">// pub fn gqlParseSimpleBuiltInType(comptime T: type, comptime ctx: ?ParseContext) []const u8 {}</span>
 </span>
-<span class="line" id="L71"><span class="tok-comment">//             // will become graphql's int type</span>
-</span>
-<span class="line" id="L72"><span class="tok-comment">//             // that is why I ignore the value of this type here</span>
-</span>
-<span class="line" id="L73"><span class="tok-comment">//             return res: {</span>
-</span>
-<span class="line" id="L74"><span class="tok-comment">//                 if (subTypeOfOptional) break :res &quot;Int&quot;;</span>
-</span>
-<span class="line" id="L75"><span class="tok-comment">//                 break :res &quot;Int!&quot;;</span>
-</span>
-<span class="line" id="L76"><span class="tok-comment">//             };</span>
-</span>
-<span class="line" id="L77"><span class="tok-comment">//         },</span>
-</span>
-<span class="line" id="L78"><span class="tok-comment">//         .Float =&gt; {</span>
-</span>
-<span class="line" id="L79"><span class="tok-comment">//             // same reason as above</span>
-</span>
-<span class="line" id="L80"><span class="tok-comment">//             return res: {</span>
-</span>
-<span class="line" id="L81"><span class="tok-comment">//                 if (subTypeOfOptional) break :res &quot;Float&quot;;</span>
-</span>
-<span class="line" id="L82"><span class="tok-comment">//                 break :res &quot;Float!&quot;;</span>
-</span>
-<span class="line" id="L83"><span class="tok-comment">//             };</span>
-</span>
-<span class="line" id="L84"><span class="tok-comment">//         },</span>
-</span>
-<span class="line" id="L85"><span class="tok-comment">//         .Pointer =&gt; |p| {</span>
-</span>
-<span class="line" id="L86"><span class="tok-comment">//             return parsePointerType(p);</span>
-</span>
-<span class="line" id="L87"><span class="tok-comment">//         },</span>
-</span>
-<span class="line" id="L88"><span class="tok-comment">//         .Array =&gt; |array| {</span>
-</span>
-<span class="line" id="L89"><span class="tok-comment">//             // a lot people don't know but there actually is a type like this [A!]!</span>
-</span>
-<span class="line" id="L90"><span class="tok-comment">//             return res: {</span>
-</span>
-<span class="line" id="L91"><span class="tok-comment">//                 if (subTypeOfOptional) break :res &quot;[&quot; ++ zigTypeToGraphqlType(array.child, false) ++ &quot;]&quot;;</span>
-</span>
-<span class="line" id="L92"><span class="tok-comment">//                 break :res &quot;[&quot; ++ zigTypeToGraphqlType(array.child) ++ &quot;]!&quot;;</span>
-</span>
-<span class="line" id="L93"><span class="tok-comment">//             };</span>
-</span>
-<span class="line" id="L94"><span class="tok-comment">//         },</span>
-</span>
-<span class="line" id="L95"><span class="tok-comment">//         .Struct =&gt; |obj| {</span>
-</span>
-<span class="line" id="L96"><span class="tok-comment">//             comptime var res = &quot;type &quot; ++ @typeName(obj) ++ &quot; {&quot;;</span>
-</span>
-<span class="line" id="L97"><span class="tok-comment">//             for (obj.fields) |field| {</span>
-</span>
-<span class="line" id="L98"><span class="tok-comment">//                 res = res ++ &quot;\t\t&quot; + field.name + &quot;: &quot; + zigTypeToGraphqlType(field.field_type, false) ++ &quot;\n&quot;;</span>
-</span>
-<span class="line" id="L99"><span class="tok-comment">//             }</span>
-</span>
-<span class="line" id="L100"><span class="tok-comment">//             res = res ++ &quot;}&quot;;</span>
-</span>
-<span class="line" id="L101"><span class="tok-comment">//             return res;</span>
-</span>
-<span class="line" id="L102"><span class="tok-comment">//         },</span>
-</span>
-<span class="line" id="L103"><span class="tok-comment">//         .Optional =&gt; |op| {</span>
-</span>
-<span class="line" id="L104"><span class="tok-comment">//             return zigTypeToGraphqlType(op.child);</span>
-</span>
-<span class="line" id="L105"><span class="tok-comment">//         },</span>
-</span>
-<span class="line" id="L106"><span class="tok-comment">//         // ErrorUnion: ErrorUnion,</span>
-</span>
-<span class="line" id="L107"><span class="tok-comment">//         // ErrorSet: ErrorSet,</span>
-</span>
-<span class="line" id="L108"><span class="tok-comment">//         // Enum: Enum,</span>
-</span>
-<span class="line" id="L109"><span class="tok-comment">//         // Union: Union,</span>
-</span>
-<span class="line" id="L110"><span class="tok-comment">//         // Fn: Fn,</span>
-</span>
-<span class="line" id="L111"><span class="tok-comment">//         // BoundFn: Fn,</span>
-</span>
-<span class="line" id="L112"><span class="tok-comment">//     }</span>
-</span>
-<span class="line" id="L113"><span class="tok-comment">// }</span>
-</span>
-<span class="line" id="L114"></span>
-<span class="line" id="L115"><span class="tok-comment">// /// parse one field of enum struct or union</span>
-</span>
-<span class="line" id="L116"><span class="tok-comment">// fn parseFieldOfAComplexType(comptime T: type, comptime isSubtype: bool) []const u8 {</span>
-</span>
-<span class="line" id="L117"><span class="tok-comment">//     if (isSubtype) return @typeName(T);</span>
-</span>
-<span class="line" id="L118"></span>
-<span class="line" id="L119"><span class="tok-comment">//     const typeInfo = @typeInfo(T);</span>
-</span>
-<span class="line" id="L120"><span class="tok-comment">//     switch (typeInfo) {</span>
-</span>
-<span class="line" id="L121"><span class="tok-comment">//         .Int, .Float, .Bool =&gt; {</span>
-</span>
-<span class="line" id="L122"><span class="tok-comment">//             return zigTypeToGraphqlType(T, false);</span>
-</span>
-<span class="line" id="L123"><span class="tok-comment">//         },</span>
-</span>
-<span class="line" id="L124"><span class="tok-comment">//         .Pointer =&gt; |p| {</span>
-</span>
-<span class="line" id="L125"><span class="tok-comment">//             if (T == []const u8) return res: {</span>
-</span>
-<span class="line" id="L126"><span class="tok-comment">//                 if (subTypeOfOptional) break :res &quot;String&quot;;</span>
-</span>
-<span class="line" id="L127"><span class="tok-comment">//                 break :res &quot;String!&quot;;</span>
-</span>
-<span class="line" id="L128"><span class="tok-comment">//             };</span>
-</span>
-<span class="line" id="L129"><span class="tok-comment">//             return parsePointerType(p.child);</span>
-</span>
-<span class="line" id="L130"><span class="tok-comment">//         },</span>
-</span>
-<span class="line" id="L131"><span class="tok-comment">//     }</span>
-</span>
-<span class="line" id="L132"><span class="tok-comment">// }</span>
-</span>
-<span class="line" id="L133"></span>
-<span class="line" id="L134"><span class="tok-comment">// fn parsePointerType(comptime ptr: std.builtin.Type.Pointer) []const u8 {</span>
-</span>
-<span class="line" id="L135"><span class="tok-comment">//     if (ptr.size != .One) {</span>
-</span>
-<span class="line" id="L136"><span class="tok-comment">//         // for string types</span>
-</span>
-<span class="line" id="L137"><span class="tok-comment">//         if (ptr.child == u8) return res: {</span>
-</span>
-<span class="line" id="L138"><span class="tok-comment">//             if (subTypeOfOptional) break :res &quot;String&quot;;</span>
-</span>
-<span class="line" id="L139"><span class="tok-comment">//             break :res &quot;String!&quot;;</span>
-</span>
-<span class="line" id="L140"><span class="tok-comment">//         };</span>
-</span>
-<span class="line" id="L141"><span class="tok-comment">//         @compileError(</span>
-</span>
-<span class="line" id="L142"><span class="tok-comment">//             \\ array pointer or slice is only supported for u8</span>
-</span>
-<span class="line" id="L143"><span class="tok-comment">//             \\ because of zig's string implementation</span>
-</span>
-<span class="line" id="L144"><span class="tok-comment">//             \\ try arraylist type from the standard library</span>
-</span>
-<span class="line" id="L145"><span class="tok-comment">//             \\ if you need a unknown size container of something</span>
-</span>
-<span class="line" id="L146"><span class="tok-comment">//         );</span>
-</span>
-<span class="line" id="L147"><span class="tok-comment">//     }</span>
-</span>
-<span class="line" id="L148"><span class="tok-comment">//     switch (@typeInfo(ptr.child)) {</span>
-</span>
-<span class="line" id="L149"><span class="tok-comment">//         .Struct, .Union =&gt; {</span>
-</span>
-<span class="line" id="L150"><span class="tok-comment">//             return zigTypeToGraphqlType(ptr.child, false);</span>
-</span>
-<span class="line" id="L151"><span class="tok-comment">//         },</span>
-</span>
-<span class="line" id="L152"><span class="tok-comment">//         else =&gt; {</span>
-</span>
-<span class="line" id="L153"><span class="tok-comment">//             @compileError(</span>
-</span>
-<span class="line" id="L154"><span class="tok-comment">//                 \\ only support struct or union pointer here</span>
-</span>
-<span class="line" id="L155"><span class="tok-comment">//             );</span>
-</span>
-<span class="line" id="L156"><span class="tok-comment">//         },</span>
-</span>
-<span class="line" id="L157"><span class="tok-comment">//     }</span>
-</span>
-<span class="line" id="L158"><span class="tok-comment">// }</span>
-</span>
-<span class="line" id="L159"></span>
+<span class="line" id="L100"></span>
 </code></pre></body>
 </html>

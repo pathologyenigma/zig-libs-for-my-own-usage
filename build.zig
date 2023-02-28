@@ -41,4 +41,13 @@ pub fn build(b: *std.Build) void {
     // This will evaluate the `test` step rather than the default, which is "install".
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.step);
+    const docs_obj = b.addObject(.{
+        .name = "docs",
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+    docs_obj.emit_docs = .emit;
+    const docs_step = b.step("docs", "Generate documentation");
+    docs_step.dependOn(&docs_obj.step);
 }

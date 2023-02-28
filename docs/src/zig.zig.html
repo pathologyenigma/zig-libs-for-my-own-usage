@@ -121,9 +121,9 @@
 <span class="line" id="L8"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> fmtId = fmt.fmtId;</span>
 <span class="line" id="L9"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> fmtEscapes = fmt.fmtEscapes;</span>
 <span class="line" id="L10"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> isValidId = fmt.isValidId;</span>
-<span class="line" id="L11"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> parse = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;zig/parse.zig&quot;</span>).parse;</span>
-<span class="line" id="L12"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> string_literal = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;zig/string_literal.zig&quot;</span>);</span>
-<span class="line" id="L13"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> number_literal = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;zig/number_literal.zig&quot;</span>);</span>
+<span class="line" id="L11"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> string_literal = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;zig/string_literal.zig&quot;</span>);</span>
+<span class="line" id="L12"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> number_literal = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;zig/number_literal.zig&quot;</span>);</span>
+<span class="line" id="L13"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> primitives = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;zig/primitives.zig&quot;</span>);</span>
 <span class="line" id="L14"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> Ast = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;zig/Ast.zig&quot;</span>);</span>
 <span class="line" id="L15"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> system = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;zig/system.zig&quot;</span>);</span>
 <span class="line" id="L16"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> CrossTarget = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;zig/CrossTarget.zig&quot;</span>);</span>
@@ -308,8 +308,8 @@
 <span class="line" id="L193">                target.libPrefix(), root_name,</span>
 <span class="line" id="L194">            }),</span>
 <span class="line" id="L195">        },</span>
-<span class="line" id="L196">        .nvptx =&gt; <span class="tok-kw">return</span> std.fmt.allocPrint(allocator, <span class="tok-str">&quot;{s}&quot;</span>, .{root_name}),</span>
-<span class="line" id="L197">        .dxcontainer =&gt; <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;TODO what's the file extension for these?&quot;</span>),</span>
+<span class="line" id="L196">        .nvptx =&gt; <span class="tok-kw">return</span> std.fmt.allocPrint(allocator, <span class="tok-str">&quot;{s}.ptx&quot;</span>, .{root_name}),</span>
+<span class="line" id="L197">        .dxcontainer =&gt; <span class="tok-kw">return</span> std.fmt.allocPrint(allocator, <span class="tok-str">&quot;{s}.dxil&quot;</span>, .{root_name}),</span>
 <span class="line" id="L198">    }</span>
 <span class="line" id="L199">}</span>
 <span class="line" id="L200"></span>
