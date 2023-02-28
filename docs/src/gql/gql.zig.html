@@ -115,79 +115,184 @@
 <span class="line" id="L2"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
 <span class="line" id="L3"><span class="tok-kw">const</span> trait = std.meta.trait;</span>
 <span class="line" id="L4"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> parser = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;parser.zig&quot;</span>);</span>
-<span class="line" id="L5"><span class="tok-comment">/// type checker for scalar type</span></span>
-<span class="line" id="L6"><span class="tok-comment">/// return false immediately when one item check is failed</span></span>
-<span class="line" id="L7"><span class="tok-comment">/// you can replace return false things to custom error to show more info</span></span>
-<span class="line" id="L8"><span class="tok-comment">/// every step of the type check having debug print</span></span>
-<span class="line" id="L9"><span class="tok-comment">/// you can remove it if you want to</span></span>
-<span class="line" id="L10"><span class="tok-comment">/// this is equal with the a trait in rust like:</span></span>
-<span class="line" id="L11"><span class="tok-comment">/// trait ScalarType&lt;'a&gt; {</span></span>
-<span class="line" id="L12"><span class="tok-comment">///     fn serialize(&amp;mut self) -&gt; &amp;'a str;</span></span>
-<span class="line" id="L13"><span class="tok-comment">///     fn deserialize(input: &amp;'a str') -&gt; Self;</span></span>
-<span class="line" id="L14"><span class="tok-comment">/// }</span></span>
-<span class="line" id="L15"><span class="tok-comment">/// but a little more, because we expect type to having a type_name field</span></span>
-<span class="line" id="L16"><span class="tok-comment">/// which is a comptime []const u8</span></span>
-<span class="line" id="L17"><span class="tok-comment">/// notice: this type checker may not being used outside of this library</span></span>
-<span class="line" id="L18"><span class="tok-comment">/// scalar type is only need to check when default parse rule is failed</span></span>
-<span class="line" id="L19"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">isScalarType</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>) <span class="tok-type">bool</span> {</span>
-<span class="line" id="L20">    std.debug.print(<span class="tok-str">&quot;\ntype check starting...\n&quot;</span>, .{});</span>
-<span class="line" id="L21">    <span class="tok-kw">if</span> (<span class="tok-builtin">@typeInfo</span>(T) != .Struct) {</span>
-<span class="line" id="L22">        <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
-<span class="line" id="L23">    }</span>
-<span class="line" id="L24">    std.debug.print(<span class="tok-str">&quot;root type check passed...\n&quot;</span>, .{});</span>
-<span class="line" id="L25">    <span class="tok-kw">if</span> (!trait.hasFn(<span class="tok-str">&quot;serialize&quot;</span>)(T)) <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
-<span class="line" id="L26">    std.debug.print(<span class="tok-str">&quot;serialize function is contained...\n&quot;</span>, .{});</span>
-<span class="line" id="L27">    <span class="tok-kw">const</span> serialize_fn = <span class="tok-builtin">@typeInfo</span>(<span class="tok-builtin">@TypeOf</span>(<span class="tok-builtin">@field</span>(T, <span class="tok-str">&quot;serialize&quot;</span>))).Fn;</span>
-<span class="line" id="L28">    <span class="tok-kw">const</span> serialize_fn_args = serialize_fn.args;</span>
-<span class="line" id="L29">    <span class="tok-kw">if</span> (serialize_fn_args.len != <span class="tok-number">1</span>) {</span>
-<span class="line" id="L30">        <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
-<span class="line" id="L31">    }</span>
-<span class="line" id="L32">    std.debug.print(<span class="tok-str">&quot;serialize function's args length is correct...\n&quot;</span>, .{});</span>
-<span class="line" id="L33">    <span class="tok-kw">if</span> (!trait.isPtrTo(<span class="tok-builtin">@typeInfo</span>(T))(serialize_fn_args[<span class="tok-number">0</span>].arg_type.?)) {</span>
-<span class="line" id="L34">        <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
-<span class="line" id="L35">    }</span>
-<span class="line" id="L36">    std.debug.print(<span class="tok-str">&quot;serialize function's args type is correct...\n&quot;</span>, .{});</span>
-<span class="line" id="L37">    <span class="tok-kw">if</span> (serialize_fn.return_type != []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) {</span>
-<span class="line" id="L38">        <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
-<span class="line" id="L39">    }</span>
-<span class="line" id="L40">    std.debug.print(<span class="tok-str">&quot;serialize function's return type is correct...\n&quot;</span>, .{});</span>
+<span class="line" id="L5"><span class="tok-comment">// /// type checker for scalar type</span>
+</span>
+<span class="line" id="L6"><span class="tok-comment">// /// return false immediately when one item check is failed</span>
+</span>
+<span class="line" id="L7"><span class="tok-comment">// /// you can replace return false things to custom error to show more info</span>
+</span>
+<span class="line" id="L8"><span class="tok-comment">// /// every step of the type check having debug print</span>
+</span>
+<span class="line" id="L9"><span class="tok-comment">// /// you can remove it if you want to</span>
+</span>
+<span class="line" id="L10"><span class="tok-comment">// /// this is equal with the a trait in rust like:</span>
+</span>
+<span class="line" id="L11"><span class="tok-comment">// /// trait ScalarType&lt;'a&gt; {</span>
+</span>
+<span class="line" id="L12"><span class="tok-comment">// ///     fn serialize(&amp;mut self) -&gt; &amp;'a str;</span>
+</span>
+<span class="line" id="L13"><span class="tok-comment">// ///     fn deserialize(input: &amp;'a str') -&gt; Self;</span>
+</span>
+<span class="line" id="L14"><span class="tok-comment">// /// }</span>
+</span>
+<span class="line" id="L15"><span class="tok-comment">// /// but a little more, because we expect type to having a type_name field</span>
+</span>
+<span class="line" id="L16"><span class="tok-comment">// /// which is a comptime []const u8</span>
+</span>
+<span class="line" id="L17"><span class="tok-comment">// /// notice: this type checker may not being used outside of this library</span>
+</span>
+<span class="line" id="L18"><span class="tok-comment">// /// scalar type is only need to check when default parse rule is failed</span>
+</span>
+<span class="line" id="L19"><span class="tok-comment">// pub fn isScalarType(comptime T: type) bool {</span>
+</span>
+<span class="line" id="L20"><span class="tok-comment">//     std.debug.print(&quot;\ntype check starting...\n&quot;, .{});</span>
+</span>
+<span class="line" id="L21"><span class="tok-comment">//     if (@typeInfo(T) != .Struct) {</span>
+</span>
+<span class="line" id="L22"><span class="tok-comment">//         return false;</span>
+</span>
+<span class="line" id="L23"><span class="tok-comment">//     }</span>
+</span>
+<span class="line" id="L24"><span class="tok-comment">//     std.debug.print(&quot;root type check passed...\n&quot;, .{});</span>
+</span>
+<span class="line" id="L25"><span class="tok-comment">//     if (!trait.hasFn(&quot;serialize&quot;)(T)) return false;</span>
+</span>
+<span class="line" id="L26"><span class="tok-comment">//     std.debug.print(&quot;serialize function is contained...\n&quot;, .{});</span>
+</span>
+<span class="line" id="L27"><span class="tok-comment">//     const serialize_fn = @typeInfo(@TypeOf(@field(T, &quot;serialize&quot;))).Fn;</span>
+</span>
+<span class="line" id="L28"><span class="tok-comment">//     const serialize_fn_args = serialize_fn.params;</span>
+</span>
+<span class="line" id="L29"><span class="tok-comment">//     if (serialize_fn_args.len != 1) {</span>
+</span>
+<span class="line" id="L30"><span class="tok-comment">//         return false;</span>
+</span>
+<span class="line" id="L31"><span class="tok-comment">//     }</span>
+</span>
+<span class="line" id="L32"><span class="tok-comment">//     std.debug.print(&quot;serialize function's args length is correct...\n&quot;, .{});</span>
+</span>
+<span class="line" id="L33"><span class="tok-comment">//     if (!trait.isPtrTo(@typeInfo(T))(serialize_fn_args[0].type.?)) {</span>
+</span>
+<span class="line" id="L34"><span class="tok-comment">//         return false;</span>
+</span>
+<span class="line" id="L35"><span class="tok-comment">//     }</span>
+</span>
+<span class="line" id="L36"><span class="tok-comment">//     std.debug.print(&quot;serialize function's args type is correct...\n&quot;, .{});</span>
+</span>
+<span class="line" id="L37"><span class="tok-comment">//     if (serialize_fn.return_type != []const u8) {</span>
+</span>
+<span class="line" id="L38"><span class="tok-comment">//         return false;</span>
+</span>
+<span class="line" id="L39"><span class="tok-comment">//     }</span>
+</span>
+<span class="line" id="L40"><span class="tok-comment">//     std.debug.print(&quot;serialize function's return type is correct...\n&quot;, .{});</span>
+</span>
 <span class="line" id="L41"></span>
-<span class="line" id="L42">    <span class="tok-kw">if</span> (!trait.hasFn(<span class="tok-str">&quot;deserialize&quot;</span>)(T)) <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
-<span class="line" id="L43">    std.debug.print(<span class="tok-str">&quot;deserialize function si contained...\n&quot;</span>, .{});</span>
+<span class="line" id="L42"><span class="tok-comment">//     if (!trait.hasFn(&quot;deserialize&quot;)(T)) return false;</span>
+</span>
+<span class="line" id="L43"><span class="tok-comment">//     std.debug.print(&quot;deserialize function si contained...\n&quot;, .{});</span>
+</span>
 <span class="line" id="L44"></span>
-<span class="line" id="L45">    <span class="tok-kw">const</span> deserialize_fn = <span class="tok-builtin">@typeInfo</span>(<span class="tok-builtin">@TypeOf</span>(<span class="tok-builtin">@field</span>(T, <span class="tok-str">&quot;deserialize&quot;</span>))).Fn;</span>
-<span class="line" id="L46">    <span class="tok-kw">const</span> deserialize_fn_args = deserialize_fn.args;</span>
-<span class="line" id="L47">    <span class="tok-kw">if</span> (deserialize_fn_args.len != <span class="tok-number">1</span>) {</span>
-<span class="line" id="L48">        <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
-<span class="line" id="L49">    }</span>
-<span class="line" id="L50">    std.debug.print(<span class="tok-str">&quot;deserialize function's args length is correct\n&quot;</span>, .{});</span>
-<span class="line" id="L51">    <span class="tok-kw">if</span> (deserialize_fn_args[<span class="tok-number">0</span>].arg_type.? != []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) {</span>
-<span class="line" id="L52">        <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
-<span class="line" id="L53">    }</span>
-<span class="line" id="L54">    std.debug.print(<span class="tok-str">&quot;deserialize function's args type is correct...\n&quot;</span>, .{});</span>
-<span class="line" id="L55">    <span class="tok-kw">if</span> (deserialize_fn.return_type != T) {</span>
-<span class="line" id="L56">        <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
-<span class="line" id="L57">    }</span>
-<span class="line" id="L58">    std.debug.print(<span class="tok-str">&quot;deserialize function's return type is correct...\n&quot;</span>, .{});</span>
-<span class="line" id="L59">    <span class="tok-kw">if</span> (<span class="tok-builtin">@hasField</span>(T, <span class="tok-str">&quot;type_name&quot;</span>)) {</span>
-<span class="line" id="L60">        std.debug.print(<span class="tok-str">&quot;type_name arg is contained...\n&quot;</span>, .{});</span>
-<span class="line" id="L61">        <span class="tok-kw">inline</span> <span class="tok-kw">for</span> (<span class="tok-builtin">@typeInfo</span>(T).Struct.fields) |field| {</span>
-<span class="line" id="L62">            <span class="tok-kw">comptime</span> <span class="tok-kw">if</span> (std.mem.indexOfDiff(<span class="tok-type">u8</span>, field.name, <span class="tok-str">&quot;type_name&quot;</span>)) |index_diff| {</span>
-<span class="line" id="L63">                _ = index_diff;</span>
-<span class="line" id="L64">                <span class="tok-kw">continue</span>;</span>
-<span class="line" id="L65">            };</span>
-<span class="line" id="L66">            <span class="tok-kw">if</span> (field.field_type != []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) {</span>
-<span class="line" id="L67">                <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
-<span class="line" id="L68">            }</span>
-<span class="line" id="L69">            std.debug.print(<span class="tok-str">&quot;type_name arg's type is correct...\n&quot;</span>, .{});</span>
-<span class="line" id="L70">            <span class="tok-kw">if</span> (!field.is_comptime) {</span>
-<span class="line" id="L71">                <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
-<span class="line" id="L72">            }</span>
-<span class="line" id="L73">            std.debug.print(<span class="tok-str">&quot;type_name arg is comptime...\n&quot;</span>, .{});</span>
-<span class="line" id="L74">        }</span>
-<span class="line" id="L75">    }</span>
-<span class="line" id="L76">    <span class="tok-kw">return</span> <span class="tok-null">true</span>;</span>
-<span class="line" id="L77">}</span>
-<span class="line" id="L78"></span>
+<span class="line" id="L45"><span class="tok-comment">//     const deserialize_fn = @typeInfo(@TypeOf(@field(T, &quot;deserialize&quot;))).Fn;</span>
+</span>
+<span class="line" id="L46"><span class="tok-comment">//     const deserialize_fn_args = deserialize_fn.params;</span>
+</span>
+<span class="line" id="L47"><span class="tok-comment">//     if (deserialize_fn_args.len != 1) {</span>
+</span>
+<span class="line" id="L48"><span class="tok-comment">//         return false;</span>
+</span>
+<span class="line" id="L49"><span class="tok-comment">//     }</span>
+</span>
+<span class="line" id="L50"><span class="tok-comment">//     std.debug.print(&quot;deserialize function's args length is correct\n&quot;, .{});</span>
+</span>
+<span class="line" id="L51"><span class="tok-comment">//     if (deserialize_fn_args[0].type.? != []const u8) {</span>
+</span>
+<span class="line" id="L52"><span class="tok-comment">//         return false;</span>
+</span>
+<span class="line" id="L53"><span class="tok-comment">//     }</span>
+</span>
+<span class="line" id="L54"><span class="tok-comment">//     std.debug.print(&quot;deserialize function's args type is correct...\n&quot;, .{});</span>
+</span>
+<span class="line" id="L55"><span class="tok-comment">//     if (deserialize_fn.return_type != T) {</span>
+</span>
+<span class="line" id="L56"><span class="tok-comment">//         return false;</span>
+</span>
+<span class="line" id="L57"><span class="tok-comment">//     }</span>
+</span>
+<span class="line" id="L58"><span class="tok-comment">//     std.debug.print(&quot;deserialize function's return type is correct...\n&quot;, .{});</span>
+</span>
+<span class="line" id="L59"><span class="tok-comment">//     if (@hasField(T, &quot;type_name&quot;)) {</span>
+</span>
+<span class="line" id="L60"><span class="tok-comment">//         std.debug.print(&quot;type_name arg is contained...\n&quot;, .{});</span>
+</span>
+<span class="line" id="L61"><span class="tok-comment">//         inline for (@typeInfo(T).Struct.fields) |field| {</span>
+</span>
+<span class="line" id="L62"><span class="tok-comment">//             comptime if (std.mem.indexOfDiff(u8, field.name, &quot;type_name&quot;)) |index_diff| {</span>
+</span>
+<span class="line" id="L63"><span class="tok-comment">//                 _ = index_diff;</span>
+</span>
+<span class="line" id="L64"><span class="tok-comment">//                 continue;</span>
+</span>
+<span class="line" id="L65"><span class="tok-comment">//             };</span>
+</span>
+<span class="line" id="L66"><span class="tok-comment">//             if (field.type != []const u8) {</span>
+</span>
+<span class="line" id="L67"><span class="tok-comment">//                 return false;</span>
+</span>
+<span class="line" id="L68"><span class="tok-comment">//             }</span>
+</span>
+<span class="line" id="L69"><span class="tok-comment">//             std.debug.print(&quot;type_name arg's type is correct...\n&quot;, .{});</span>
+</span>
+<span class="line" id="L70"><span class="tok-comment">//             if (!field.is_comptime) {</span>
+</span>
+<span class="line" id="L71"><span class="tok-comment">//                 return false;</span>
+</span>
+<span class="line" id="L72"><span class="tok-comment">//             }</span>
+</span>
+<span class="line" id="L73"><span class="tok-comment">//             std.debug.print(&quot;type_name arg is comptime...\n&quot;, .{});</span>
+</span>
+<span class="line" id="L74"><span class="tok-comment">//         }</span>
+</span>
+<span class="line" id="L75"><span class="tok-comment">//     }</span>
+</span>
+<span class="line" id="L76"><span class="tok-comment">//     return true;</span>
+</span>
+<span class="line" id="L77"><span class="tok-comment">// }</span>
+</span>
+<span class="line" id="L78"><span class="tok-comment">// test &quot;scalar&quot; {</span>
+</span>
+<span class="line" id="L79"><span class="tok-comment">//     const A = struct {</span>
+</span>
+<span class="line" id="L80"><span class="tok-comment">//         // const json = std.json;</span>
+</span>
+<span class="line" id="L81"><span class="tok-comment">//         const Self = @This();</span>
+</span>
+<span class="line" id="L82"><span class="tok-comment">//         comptime type_name: []const u8 = &quot;Null&quot;,</span>
+</span>
+<span class="line" id="L83"><span class="tok-comment">//         pub fn serialize(self: *Self) []const u8 {</span>
+</span>
+<span class="line" id="L84"><span class="tok-comment">//             _ = self;</span>
+</span>
+<span class="line" id="L85"><span class="tok-comment">//             return &quot;null&quot;;</span>
+</span>
+<span class="line" id="L86"><span class="tok-comment">//         }</span>
+</span>
+<span class="line" id="L87"><span class="tok-comment">//         pub fn deserialize(input: []const u8) Self {</span>
+</span>
+<span class="line" id="L88"><span class="tok-comment">//             _ = input;</span>
+</span>
+<span class="line" id="L89"><span class="tok-comment">//             return Self{};</span>
+</span>
+<span class="line" id="L90"><span class="tok-comment">//         }</span>
+</span>
+<span class="line" id="L91"><span class="tok-comment">//     };</span>
+</span>
+<span class="line" id="L92"><span class="tok-comment">//     try std.testing.expect(gql.isScalarType(A));</span>
+</span>
+<span class="line" id="L93"><span class="tok-comment">// }</span>
+</span>
+<span class="line" id="L94"><span class="tok-comment">// those things are not friendly for building high-level api</span>
+</span>
+<span class="line" id="L95"></span>
 </code></pre></body>
 </html>

@@ -1493,9 +1493,9 @@
 <span class="line" id="L1219">            IdAndValue{ .id = <span class="tok-number">2</span>, .value = <span class="tok-number">0</span> },</span>
 <span class="line" id="L1220">        },</span>
 <span class="line" id="L1221">    };</span>
-<span class="line" id="L1222">    <span class="tok-kw">for</span> (cases) |*case| {</span>
+<span class="line" id="L1222">    <span class="tok-kw">for</span> (&amp;cases) |*case| {</span>
 <span class="line" id="L1223">        insertionSort(IdAndValue, (case.*)[<span class="tok-number">0</span>..], {}, cmpByValue);</span>
-<span class="line" id="L1224">        <span class="tok-kw">for</span> (case.*) |item, i| {</span>
+<span class="line" id="L1224">        <span class="tok-kw">for</span> (case.*, <span class="tok-number">0</span>..) |item, i| {</span>
 <span class="line" id="L1225">            <span class="tok-kw">try</span> testing.expect(item.id == expected[i].id);</span>
 <span class="line" id="L1226">            <span class="tok-kw">try</span> testing.expect(item.value == expected[i].value);</span>
 <span class="line" id="L1227">        }</span>
@@ -1648,7 +1648,7 @@
 <span class="line" id="L1374">    <span class="tok-kw">defer</span> testing.allocator.free(array);</span>
 <span class="line" id="L1375">    <span class="tok-comment">// populate with random data</span>
 </span>
-<span class="line" id="L1376">    <span class="tok-kw">for</span> (array) |*item, index| {</span>
+<span class="line" id="L1376">    <span class="tok-kw">for</span> (array, <span class="tok-number">0</span>..) |*item, index| {</span>
 <span class="line" id="L1377">        item.id = index;</span>
 <span class="line" id="L1378">        item.value = rng.intRangeLessThan(<span class="tok-type">i32</span>, <span class="tok-number">0</span>, <span class="tok-number">100</span>);</span>
 <span class="line" id="L1379">    }</span>
@@ -1676,7 +1676,7 @@
 <span class="line" id="L1401"></span>
 <span class="line" id="L1402">    <span class="tok-kw">var</span> smallest = items[<span class="tok-number">0</span>];</span>
 <span class="line" id="L1403">    <span class="tok-kw">var</span> smallest_index: <span class="tok-type">usize</span> = <span class="tok-number">0</span>;</span>
-<span class="line" id="L1404">    <span class="tok-kw">for</span> (items[<span class="tok-number">1</span>..]) |item, i| {</span>
+<span class="line" id="L1404">    <span class="tok-kw">for</span> (items[<span class="tok-number">1</span>..], <span class="tok-number">0</span>..) |item, i| {</span>
 <span class="line" id="L1405">        <span class="tok-kw">if</span> (lessThan(context, item, smallest)) {</span>
 <span class="line" id="L1406">            smallest = item;</span>
 <span class="line" id="L1407">            smallest_index = i + <span class="tok-number">1</span>;</span>
@@ -1728,7 +1728,7 @@
 <span class="line" id="L1453"></span>
 <span class="line" id="L1454">    <span class="tok-kw">var</span> biggest = items[<span class="tok-number">0</span>];</span>
 <span class="line" id="L1455">    <span class="tok-kw">var</span> biggest_index: <span class="tok-type">usize</span> = <span class="tok-number">0</span>;</span>
-<span class="line" id="L1456">    <span class="tok-kw">for</span> (items[<span class="tok-number">1</span>..]) |item, i| {</span>
+<span class="line" id="L1456">    <span class="tok-kw">for</span> (items[<span class="tok-number">1</span>..], <span class="tok-number">0</span>..) |item, i| {</span>
 <span class="line" id="L1457">        <span class="tok-kw">if</span> (lessThan(context, biggest, item)) {</span>
 <span class="line" id="L1458">            biggest = item;</span>
 <span class="line" id="L1459">            biggest_index = i + <span class="tok-number">1</span>;</span>

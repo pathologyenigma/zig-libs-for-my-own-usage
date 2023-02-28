@@ -115,53 +115,110 @@
 <span class="line" id="L2"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
 <span class="line" id="L3"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> Matrix = math.Matrix;</span>
 <span class="line" id="L4"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> gql = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;gql/gql.zig&quot;</span>);</span>
-<span class="line" id="L5"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> iter = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;utils/iter.zig&quot;</span>);</span>
-<span class="line" id="L6"><span class="tok-kw">test</span> <span class="tok-str">&quot;Matrix&quot;</span> {</span>
-<span class="line" id="L7">    <span class="tok-kw">var</span> m1 = Matrix(<span class="tok-number">4</span>, <span class="tok-number">4</span>, <span class="tok-type">f32</span>).init(.{ .{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> }, .{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> }, .{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> }, .{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> } });</span>
-<span class="line" id="L8">    <span class="tok-kw">defer</span> m1.deinit();</span>
-<span class="line" id="L9">    m1.print();</span>
-<span class="line" id="L10">    <span class="tok-kw">var</span> m2 = Matrix(<span class="tok-number">4</span>, <span class="tok-number">4</span>, <span class="tok-type">f32</span>).init(.{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span>, <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span>, <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span>, <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> });</span>
-<span class="line" id="L11">    <span class="tok-kw">defer</span> m2.deinit();</span>
-<span class="line" id="L12">    std.log.warn(<span class="tok-str">&quot;{d}&quot;</span>, .{m2.val.len});</span>
-<span class="line" id="L13">    m2.print();</span>
-<span class="line" id="L14">    <span class="tok-kw">var</span> m3 = m1.add(m2);</span>
-<span class="line" id="L15">    <span class="tok-kw">defer</span> m3.deinit();</span>
-<span class="line" id="L16">    std.log.warn(<span class="tok-str">&quot;{d}&quot;</span>, .{m3.val.len});</span>
-<span class="line" id="L17">    m3.print();</span>
-<span class="line" id="L18">    m3.add_assign(m3);</span>
-<span class="line" id="L19">    std.log.warn(<span class="tok-str">&quot;{d}&quot;</span>, .{m3.val.len});</span>
-<span class="line" id="L20">    m3.print();</span>
-<span class="line" id="L21">    <span class="tok-kw">var</span> m4 = m3.reduce(m2);</span>
-<span class="line" id="L22">    <span class="tok-kw">defer</span> m4.deinit();</span>
-<span class="line" id="L23">    m4.print();</span>
-<span class="line" id="L24">    m4.reduce_assign(m3);</span>
-<span class="line" id="L25">    m4.print();</span>
-<span class="line" id="L26">    <span class="tok-kw">var</span> m5 = m3.mul(m4);</span>
-<span class="line" id="L27">    <span class="tok-kw">defer</span> m5.deinit();</span>
-<span class="line" id="L28">    m5.print();</span>
-<span class="line" id="L29">    <span class="tok-kw">var</span> v1 = <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">f32</span>){ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> };</span>
-<span class="line" id="L30">    <span class="tok-kw">var</span> v2 = m5.mul(v1);</span>
-<span class="line" id="L31">    std.log.warn(<span class="tok-str">&quot;{}&quot;</span>, .{v2});</span>
-<span class="line" id="L32">}</span>
-<span class="line" id="L33"></span>
-<span class="line" id="L34"><span class="tok-kw">test</span> <span class="tok-str">&quot;scalar&quot;</span> {</span>
-<span class="line" id="L35">    <span class="tok-kw">const</span> A = <span class="tok-kw">struct</span> {</span>
-<span class="line" id="L36">        <span class="tok-comment">// const json = std.json;</span>
+<span class="line" id="L5"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> utils = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;utils/utils.zig&quot;</span>);</span>
+<span class="line" id="L6"><span class="tok-kw">comptime</span> {</span>
+<span class="line" id="L7">    _ = math;</span>
+<span class="line" id="L8">    _ = Matrix;</span>
+<span class="line" id="L9">    _ = gql;</span>
+<span class="line" id="L10">    _ = utils;</span>
+<span class="line" id="L11">}</span>
+<span class="line" id="L12"></span>
+<span class="line" id="L13"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">Range</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>) <span class="tok-type">type</span> {</span>
+<span class="line" id="L14">    <span class="tok-kw">const</span> input_type_info = <span class="tok-builtin">@typeInfo</span>(T);</span>
+<span class="line" id="L15">    <span class="tok-kw">switch</span> (input_type_info) {</span>
+<span class="line" id="L16">        .Int, .Float, .Bool =&gt; {},</span>
+<span class="line" id="L17">        <span class="tok-kw">else</span> =&gt; {</span>
+<span class="line" id="L18">            <span class="tok-builtin">@compileError</span>(<span class="tok-str">&quot;Range among non-numeric types is not supported&quot;</span>);</span>
+<span class="line" id="L19">        },</span>
+<span class="line" id="L20">    }</span>
+<span class="line" id="L21">    <span class="tok-kw">return</span> <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L22">        start: T = <span class="tok-number">0</span>,</span>
+<span class="line" id="L23">        end: T,</span>
+<span class="line" id="L24">        step: T = <span class="tok-number">1</span>,</span>
+<span class="line" id="L25">        <span class="tok-kw">const</span> Self = <span class="tok-builtin">@This</span>();</span>
+<span class="line" id="L26">        <span class="tok-kw">pub</span> <span class="tok-kw">usingnamespace</span> utils.Iterator(*Self, T, .{</span>
+<span class="line" id="L27">            .next = next,</span>
+<span class="line" id="L28">        });</span>
+<span class="line" id="L29">        <span class="tok-kw">pub</span> <span class="tok-kw">const</span> ComparableSelf = utils.Comparable(*Self).impl(<span class="tok-null">null</span>)(.{</span>
+<span class="line" id="L30">            .cmpFn = cmp,</span>
+<span class="line" id="L31">        });</span>
+<span class="line" id="L32">        <span class="tok-kw">pub</span> <span class="tok-kw">const</span> ComparableT = utils.Comparable(*Self).impl(T)(.{</span>
+<span class="line" id="L33">            .cmpFn = cmpT,</span>
+<span class="line" id="L34">        });</span>
+<span class="line" id="L35">        <span class="tok-kw">fn</span> <span class="tok-fn">next</span>(self: *Self) ?T {</span>
+<span class="line" id="L36">            <span class="tok-kw">if</span> (self.start &gt;= self.end) <span class="tok-kw">return</span> <span class="tok-null">null</span>;</span>
+<span class="line" id="L37">            <span class="tok-kw">const</span> result = self.start;</span>
+<span class="line" id="L38">            self.start += self.step;</span>
+<span class="line" id="L39">            <span class="tok-kw">return</span> result;</span>
+<span class="line" id="L40">        }</span>
+<span class="line" id="L41">        <span class="tok-kw">fn</span> <span class="tok-fn">cmp</span>(self: *Self, rhs: *Self) utils.CompareResult {</span>
+<span class="line" id="L42">            <span class="tok-kw">if</span> (((self.end - self.start) / self.step) - ((rhs.end - rhs.start) / rhs.step) &gt; <span class="tok-number">0</span>) {</span>
+<span class="line" id="L43">                <span class="tok-kw">return</span> .Greater;</span>
+<span class="line" id="L44">            }</span>
+<span class="line" id="L45">            <span class="tok-kw">if</span> (((self.end - self.start) / self.step) - ((rhs.end - rhs.start) / rhs.step) &lt; <span class="tok-number">0</span>) {</span>
+<span class="line" id="L46">                <span class="tok-kw">return</span> .Less;</span>
+<span class="line" id="L47">            }</span>
+<span class="line" id="L48">            <span class="tok-kw">return</span> .Equal;</span>
+<span class="line" id="L49">        }</span>
+<span class="line" id="L50">        <span class="tok-kw">fn</span> <span class="tok-fn">cmpT</span>(self: *Self, rhs: T) utils.CompareResult {</span>
+<span class="line" id="L51">            <span class="tok-kw">if</span> (self.start &gt; rhs) <span class="tok-kw">return</span> .Greater;</span>
+<span class="line" id="L52">            <span class="tok-kw">if</span> (self.end &lt; rhs) <span class="tok-kw">return</span> .Less;</span>
+<span class="line" id="L53">            <span class="tok-kw">return</span> .Equal;</span>
+<span class="line" id="L54">        }</span>
+<span class="line" id="L55">    };</span>
+<span class="line" id="L56">}</span>
+<span class="line" id="L57"><span class="tok-comment">// something I wish will work in the future version of zig</span>
 </span>
-<span class="line" id="L37">        <span class="tok-kw">const</span> Self = <span class="tok-builtin">@This</span>();</span>
-<span class="line" id="L38">        <span class="tok-kw">comptime</span> type_name: []<span class="tok-kw">const</span> <span class="tok-type">u8</span> = <span class="tok-str">&quot;Null&quot;</span>,</span>
-<span class="line" id="L39">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">serialize</span>(self: *Self) []<span class="tok-kw">const</span> <span class="tok-type">u8</span> {</span>
-<span class="line" id="L40">            _ = self;</span>
-<span class="line" id="L41">            <span class="tok-kw">return</span> <span class="tok-str">&quot;null&quot;</span>;</span>
-<span class="line" id="L42">        }</span>
-<span class="line" id="L43">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">deserialize</span>(input: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) Self {</span>
-<span class="line" id="L44">            _ = input;</span>
-<span class="line" id="L45">            <span class="tok-kw">return</span> Self{};</span>
-<span class="line" id="L46">        }</span>
-<span class="line" id="L47">    };</span>
-<span class="line" id="L48">    <span class="tok-kw">try</span> std.testing.expect(gql.isScalarType(A));</span>
-<span class="line" id="L49">}</span>
-<span class="line" id="L50"></span>
-<span class="line" id="L51"></span>
+<span class="line" id="L58"><span class="tok-comment">// pub const Infinity = struct {</span>
+</span>
+<span class="line" id="L59"><span class="tok-comment">//     is_negative: bool = false,</span>
+</span>
+<span class="line" id="L60"><span class="tok-comment">//     const Self = @This();</span>
+</span>
+<span class="line" id="L61"><span class="tok-comment">//     pub usingnamespace utils.ComparableManager(Self).init().where(.{ .RHS = null })(.{ .cmpFn = struct {</span>
+</span>
+<span class="line" id="L62"><span class="tok-comment">//         pub fn cmp(self: Self, rhs: Self) utils.CompareResult {</span>
+</span>
+<span class="line" id="L63"><span class="tok-comment">//             if (self.is_negative == rhs.is_negative) {</span>
+</span>
+<span class="line" id="L64"><span class="tok-comment">//                 return .Equal;</span>
+</span>
+<span class="line" id="L65"><span class="tok-comment">//             } else if (self.is_negative) {</span>
+</span>
+<span class="line" id="L66"><span class="tok-comment">//                 return .Less;</span>
+</span>
+<span class="line" id="L67"><span class="tok-comment">//             } else if (!self.is_negative) return .Greater;</span>
+</span>
+<span class="line" id="L68"><span class="tok-comment">//         }</span>
+</span>
+<span class="line" id="L69"><span class="tok-comment">//     }.cmp }).end();</span>
+</span>
+<span class="line" id="L70"><span class="tok-comment">// };</span>
+</span>
+<span class="line" id="L71"></span>
+<span class="line" id="L72"><span class="tok-kw">test</span> <span class="tok-str">&quot;Iterator&quot;</span> {</span>
+<span class="line" id="L73">    <span class="tok-kw">var</span> range = Range(<span class="tok-type">u32</span>){ .end = <span class="tok-number">5</span> };</span>
+<span class="line" id="L74">    <span class="tok-kw">const</span> iter = range.iterator();</span>
+<span class="line" id="L75">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(?<span class="tok-type">u32</span>, <span class="tok-number">0</span>), iter.next());</span>
+<span class="line" id="L76">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(?<span class="tok-type">u32</span>, <span class="tok-number">1</span>), iter.next());</span>
+<span class="line" id="L77">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(?<span class="tok-type">u32</span>, <span class="tok-number">2</span>), iter.next());</span>
+<span class="line" id="L78">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(?<span class="tok-type">u32</span>, <span class="tok-number">3</span>), iter.next());</span>
+<span class="line" id="L79">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(?<span class="tok-type">u32</span>, <span class="tok-number">4</span>), iter.next());</span>
+<span class="line" id="L80">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(?<span class="tok-type">u32</span>, <span class="tok-null">null</span>), iter.next());</span>
+<span class="line" id="L81">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(?<span class="tok-type">u32</span>, <span class="tok-null">null</span>), iter.next());</span>
+<span class="line" id="L82">}</span>
+<span class="line" id="L83"><span class="tok-kw">test</span> <span class="tok-str">&quot;Comparable&quot;</span> {</span>
+<span class="line" id="L84">    <span class="tok-kw">var</span> range_1 = Range(<span class="tok-type">u32</span>){ .end = <span class="tok-number">5</span> };</span>
+<span class="line" id="L85">    <span class="tok-kw">var</span> range_2 = Range(<span class="tok-type">u32</span>){ .end = <span class="tok-number">4</span> };</span>
+<span class="line" id="L86">    <span class="tok-kw">try</span> std.testing.expectEqual(range_1.ComparableSelf().cmp(&amp;range_2), .Greater);</span>
+<span class="line" id="L87">    <span class="tok-kw">try</span> std.testing.expectEqual(range_1.ComparableT().cmp(<span class="tok-number">3</span>), .Equal);</span>
+<span class="line" id="L88">    <span class="tok-comment">// something I wish will work in the future version of zig</span>
+</span>
+<span class="line" id="L89">    <span class="tok-comment">// var infinity = Infinity {};</span>
+</span>
+<span class="line" id="L90">    <span class="tok-comment">// try std.testing.expectEqual(infinity.cmp(Infinity)(infinity), .Equal);</span>
+</span>
+<span class="line" id="L91">}</span>
+<span class="line" id="L92"></span>
 </code></pre></body>
 </html>

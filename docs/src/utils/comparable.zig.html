@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>utils\comparable.zig - source view</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgklEQVR4AWMYWuD7EllJIM4G4g4g5oIJ/odhOJ8wToOxSTXgNxDHoeiBMfA4+wGShjyYOCkG/IGqWQziEzYAoUAeiF9D5U+DxEg14DRU7jWIT5IBIOdCxf+A+CQZAAoopEB7QJwBCBwHiip8UYmRdrAlDpIMgApwQZNnNii5Dq0MBgCxxycBnwEd+wAAAABJRU5ErkJggg=="/>
+    <style>
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      pre > code {
+        display: block;
+        overflow: auto;
+        line-height: normal;
+        margin: 0em;
+      }
+      .tok-kw {
+          color: #333;
+          font-weight: bold;
+      }
+      .tok-str {
+          color: #d14;
+      }
+      .tok-builtin {
+          color: #005C7A;
+      }
+      .tok-comment {
+          color: #545454;
+          font-style: italic;
+      }
+      .tok-fn {
+          color: #900;
+          font-weight: bold;
+      }
+      .tok-null {
+          color: #005C5C;
+      }
+      .tok-number {
+          color: #005C5C;
+      }
+      .tok-type {
+          color: #458;
+          font-weight: bold;
+      }
+      pre {
+        counter-reset: line;
+      }
+      pre .line:before {
+        counter-increment: line;
+        content: counter(line);
+        display: inline-block;
+        padding-right: 1em;
+        width: 2em;
+        text-align: right;
+        color: #999;
+      }
+      
+      .line {
+        width: 100%;
+        display: inline-block;
+      }
+      .line:target {
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        background: #fafafa;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body{
+            background:#222;
+            color: #ccc;
+        }
+        pre > code {
+            color: #ccc;
+            background: #222;
+            border: unset;
+        }
+        .line:target {
+            border-top: 1px solid #444;
+            border-bottom: 1px solid #444;
+            background: #333;
+        }
+        .tok-kw {
+            color: #eee;
+        }
+        .tok-str {
+            color: #2e5;
+        }
+        .tok-builtin {
+            color: #ff894c;
+        }
+        .tok-comment {
+            color: #aa7;
+        }
+        .tok-fn {
+            color: #B1A0F8;
+        }
+        .tok-null {
+            color: #ff8080;
+        }
+        .tok-number {
+            color: #ff8080;
+        }
+        .tok-type {
+            color: #68f;
+        }
+      }
+    </style>
+</head>
+<body>
+<pre><code><span class="line" id="L1"><span class="tok-comment">//! comparable type trait</span></span>
+<span class="line" id="L2"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line" id="L3"><span class="tok-kw">const</span> StringHashMap = std.hash_map.StringHashMap;</span>
+<span class="line" id="L4"></span>
+<span class="line" id="L5"><span class="tok-comment">/// enum for comparing results</span></span>
+<span class="line" id="L6"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> CompareResult = <span class="tok-kw">enum</span>(<span class="tok-type">u8</span>) {</span>
+<span class="line" id="L7">    Greater = <span class="tok-number">0</span>,</span>
+<span class="line" id="L8">    Equal = <span class="tok-number">1</span>,</span>
+<span class="line" id="L9">    Less = <span class="tok-number">2</span>,</span>
+<span class="line" id="L10">};</span>
+<span class="line" id="L11"><span class="tok-kw">fn</span> <span class="tok-fn">ComparableMethodsRule</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>) <span class="tok-kw">fn</span> (?<span class="tok-type">type</span>) <span class="tok-type">type</span> {</span>
+<span class="line" id="L12">    <span class="tok-kw">return</span> <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L13">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">function</span>(<span class="tok-kw">comptime</span> RHS: ?<span class="tok-type">type</span>) <span class="tok-type">type</span> {</span>
+<span class="line" id="L14">            <span class="tok-kw">return</span> <span class="tok-kw">comptime</span> <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L15">                <span class="tok-kw">const</span> Self = <span class="tok-builtin">@This</span>();</span>
+<span class="line" id="L16">                <span class="tok-kw">const</span> Target = rhs: {</span>
+<span class="line" id="L17">                    <span class="tok-kw">if</span> (RHS) |R| {</span>
+<span class="line" id="L18">                        <span class="tok-kw">break</span> :rhs R;</span>
+<span class="line" id="L19">                    }</span>
+<span class="line" id="L20">                    <span class="tok-kw">break</span> :rhs T;</span>
+<span class="line" id="L21">                };</span>
+<span class="line" id="L22">                <span class="tok-kw">comptime</span> RHS: <span class="tok-type">type</span> = Target,</span>
+<span class="line" id="L23">                cmpFn: *<span class="tok-kw">const</span> <span class="tok-kw">fn</span> (T, Target) CompareResult,</span>
+<span class="line" id="L24">            };</span>
+<span class="line" id="L25">        }</span>
+<span class="line" id="L26">    }.function;</span>
+<span class="line" id="L27">}</span>
+<span class="line" id="L28"><span class="tok-kw">fn</span> <span class="tok-fn">InterfaceTypeInfer</span>(<span class="tok-kw">comptime</span> Impl: <span class="tok-type">type</span>, <span class="tok-kw">comptime</span> RHS: ?<span class="tok-type">type</span>) <span class="tok-kw">fn</span> (<span class="tok-kw">comptime</span> ComparableMethodsRule(Impl)(RHS)) <span class="tok-type">type</span> {</span>
+<span class="line" id="L29">    <span class="tok-kw">return</span> <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L30">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">run</span>(<span class="tok-kw">comptime</span> rules: ComparableMethodsRule(Impl)(RHS)) <span class="tok-type">type</span> {</span>
+<span class="line" id="L31">            <span class="tok-kw">return</span> <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L32">                impl: Impl,</span>
+<span class="line" id="L33">                <span class="tok-kw">const</span> Self = <span class="tok-builtin">@This</span>();</span>
+<span class="line" id="L34">                <span class="tok-kw">pub</span> <span class="tok-kw">inline</span> <span class="tok-kw">fn</span> <span class="tok-fn">cmp</span>(self: Self, rhs: rules.RHS) CompareResult {</span>
+<span class="line" id="L35">                    <span class="tok-kw">return</span> rules.cmpFn(self.impl, rhs);</span>
+<span class="line" id="L36">                }</span>
+<span class="line" id="L37">            };</span>
+<span class="line" id="L38">        }</span>
+<span class="line" id="L39">    }.run;</span>
+<span class="line" id="L40">}</span>
+<span class="line" id="L41"></span>
+<span class="line" id="L42"><span class="tok-comment">/// basic comparable trait</span></span>
+<span class="line" id="L43"><span class="tok-comment">/// the cmp is the only required method</span></span>
+<span class="line" id="L44"><span class="tok-comment">/// more methods coming soon</span></span>
+<span class="line" id="L45"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">Comparable</span>(<span class="tok-kw">comptime</span> Impl: <span class="tok-type">type</span>) <span class="tok-type">type</span> {</span>
+<span class="line" id="L46">    <span class="tok-kw">return</span> <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L47">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">impl</span>(<span class="tok-kw">comptime</span> RHS: ?<span class="tok-type">type</span>) <span class="tok-kw">fn</span> (<span class="tok-kw">comptime</span> ComparableMethodsRule(Impl)(RHS)) <span class="tok-type">type</span> {</span>
+<span class="line" id="L48">            <span class="tok-kw">return</span> <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L49">                <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">function</span>(<span class="tok-kw">comptime</span> rules: ComparableMethodsRule(Impl)(RHS)) <span class="tok-kw">fn</span> (Impl) InterfaceTypeInfer(Impl, RHS)(rules) {</span>
+<span class="line" id="L50">                    <span class="tok-kw">return</span> <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L51">                        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">run</span>(impl_: Impl) InterfaceTypeInfer(Impl, RHS)(rules) {</span>
+<span class="line" id="L52">                            <span class="tok-kw">return</span> .{</span>
+<span class="line" id="L53">                                .impl = impl_,</span>
+<span class="line" id="L54">                            };</span>
+<span class="line" id="L55">                        }</span>
+<span class="line" id="L56">                    }.run;</span>
+<span class="line" id="L57">                }</span>
+<span class="line" id="L58">            }.function;</span>
+<span class="line" id="L59">        }</span>
+<span class="line" id="L60">    };</span>
+<span class="line" id="L61">}</span>
+<span class="line" id="L62"></span>
+<span class="line" id="L63"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">isComparableTo</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>) <span class="tok-kw">fn</span> (<span class="tok-type">type</span>) <span class="tok-type">bool</span> {</span>
+<span class="line" id="L64">    <span class="tok-kw">return</span> <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L65">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">fun</span>(subtype: <span class="tok-type">type</span>) <span class="tok-type">bool</span> {</span>
+<span class="line" id="L66">            <span class="tok-kw">const</span> compareFunctionName = <span class="tok-kw">if</span>(T == subtype) {</span>
+<span class="line" id="L67">                <span class="tok-str">&quot;cmpSelf&quot;</span>;</span>
+<span class="line" id="L68">            } <span class="tok-kw">else</span> {</span>
+<span class="line" id="L69">                <span class="tok-str">&quot;cmp&quot;</span> ++ <span class="tok-builtin">@typeName</span>(subtype);</span>
+<span class="line" id="L70">            };</span>
+<span class="line" id="L71">            <span class="tok-kw">const</span> trait = std.meta.trait;</span>
+<span class="line" id="L72">            <span class="tok-comment">// const Type = std.builtin.Type;</span>
+</span>
+<span class="line" id="L73">            <span class="tok-kw">if</span>(!trait.hasFn(compareFunctionName)) <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
+<span class="line" id="L74">            <span class="tok-kw">const</span> typeInfo = <span class="tok-builtin">@typeInfo</span>(T);</span>
+<span class="line" id="L75">            <span class="tok-kw">if</span>(typeInfo != .Struct) {</span>
+<span class="line" id="L76">                <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
+<span class="line" id="L77">            }</span>
+<span class="line" id="L78">            <span class="tok-kw">const</span> typeStructInfo = typeInfo.Struct;</span>
+<span class="line" id="L79">            <span class="tok-kw">for</span>(typeStructInfo.fields) |field| {</span>
+<span class="line" id="L80">                <span class="tok-kw">if</span>(field.<span class="tok-type">type</span> == InterfaceTypeInfer(T, subtype)) <span class="tok-kw">return</span> <span class="tok-null">true</span>;</span>
+<span class="line" id="L81">            }</span>
+<span class="line" id="L82">            <span class="tok-kw">return</span> <span class="tok-null">false</span>;</span>
+<span class="line" id="L83">        }</span>
+<span class="line" id="L84">    }.fun;</span>
+<span class="line" id="L85">}</span>
+<span class="line" id="L86"><span class="tok-comment">// something I wish will work in the future version of zig</span>
+</span>
+<span class="line" id="L87"><span class="tok-comment">// pub fn ComparableManager(comptime Impl: type) type {</span>
+</span>
+<span class="line" id="L88"><span class="tok-comment">//     return struct {</span>
+</span>
+<span class="line" id="L89"><span class="tok-comment">//         map: StringHashMap(*const anyopaque) = StringHashMap(*const anyopaque).init(std.heap.page_allocator),</span>
+</span>
+<span class="line" id="L90"><span class="tok-comment">//         const Self = @This();</span>
+</span>
+<span class="line" id="L91"><span class="tok-comment">//         const TypeArgs = struct {</span>
+</span>
+<span class="line" id="L92"><span class="tok-comment">//             comptime RHS: ?type = null,</span>
+</span>
+<span class="line" id="L93"><span class="tok-comment">//         };</span>
+</span>
+<span class="line" id="L94"></span>
+<span class="line" id="L95"><span class="tok-comment">//         const Result = struct {</span>
+</span>
+<span class="line" id="L96"><span class="tok-comment">//             map: StringHashMap(*anyopaque),</span>
+</span>
+<span class="line" id="L97"><span class="tok-comment">//             pub fn cmp(self: @This(), comptime RHS: type) fn (Impl, RHS) CompareResult {</span>
+</span>
+<span class="line" id="L98"><span class="tok-comment">//                 if (self.map.get(@typeName(RHS)) == null) {</span>
+</span>
+<span class="line" id="L99"><span class="tok-comment">//                     @compileError(&quot;the trait Comparable(RHS: &quot; ++ @typeName(RHS) ++ &quot;) is not satisfied, do you have the implementation for that type?&quot;);</span>
+</span>
+<span class="line" id="L100"><span class="tok-comment">//                 }</span>
+</span>
+<span class="line" id="L101"><span class="tok-comment">//                 return @ptrCast(*const fn (Impl, RHS) CompareResult, self.map.get(@typeName(RHS)));</span>
+</span>
+<span class="line" id="L102"><span class="tok-comment">//             }</span>
+</span>
+<span class="line" id="L103"><span class="tok-comment">//         };</span>
+</span>
+<span class="line" id="L104"><span class="tok-comment">//         pub fn init() Self {</span>
+</span>
+<span class="line" id="L105"><span class="tok-comment">//             comptime {</span>
+</span>
+<span class="line" id="L106"><span class="tok-comment">//                 return Self{};</span>
+</span>
+<span class="line" id="L107"><span class="tok-comment">//             }</span>
+</span>
+<span class="line" id="L108"><span class="tok-comment">//         }</span>
+</span>
+<span class="line" id="L109"><span class="tok-comment">//         fn MethodBuilder(comptime type_args: TypeArgs, comptime self: Self) fn (comptime ComparableMethodsRule(Impl)(type_args.RHS)) Self {</span>
+</span>
+<span class="line" id="L110"><span class="tok-comment">//             // generate method types using type arguments that input</span>
+</span>
+<span class="line" id="L111"><span class="tok-comment">//             // return those methods with a struct with the impl function</span>
+</span>
+<span class="line" id="L112"><span class="tok-comment">//             return struct {</span>
+</span>
+<span class="line" id="L113"><span class="tok-comment">//                 pub fn impl(comptime rules: ComparableMethodsRule(Impl)(type_args.RHS)) Self {</span>
+</span>
+<span class="line" id="L114"><span class="tok-comment">//                     comptime {</span>
+</span>
+<span class="line" id="L115"><span class="tok-comment">//                         var map = try self.map.clone();</span>
+</span>
+<span class="line" id="L116"><span class="tok-comment">//                         try map.put(typename: {</span>
+</span>
+<span class="line" id="L117"><span class="tok-comment">//                             if (type_args.RHS) |some| {</span>
+</span>
+<span class="line" id="L118"><span class="tok-comment">//                                 break :typename @typeName(some);</span>
+</span>
+<span class="line" id="L119"><span class="tok-comment">//                             }</span>
+</span>
+<span class="line" id="L120"><span class="tok-comment">//                             break :typename @typeName(Impl);</span>
+</span>
+<span class="line" id="L121"><span class="tok-comment">//                         }, @ptrCast(*const anyopaque, &amp;rules.cmpFn));</span>
+</span>
+<span class="line" id="L122"><span class="tok-comment">//                         self.map.deinit();</span>
+</span>
+<span class="line" id="L123"><span class="tok-comment">//                         self.map = map;</span>
+</span>
+<span class="line" id="L124"><span class="tok-comment">//                         return self;</span>
+</span>
+<span class="line" id="L125"><span class="tok-comment">//                     }</span>
+</span>
+<span class="line" id="L126"><span class="tok-comment">//                 }</span>
+</span>
+<span class="line" id="L127"><span class="tok-comment">//             }.impl;</span>
+</span>
+<span class="line" id="L128"><span class="tok-comment">//         }</span>
+</span>
+<span class="line" id="L129"><span class="tok-comment">//         pub fn where(comptime self: Self, comptime type_args: TypeArgs) fn (comptime ComparableMethodsRule(Impl)(type_args.RHS)) Self {</span>
+</span>
+<span class="line" id="L130"><span class="tok-comment">//             // return a MethodBuilder</span>
+</span>
+<span class="line" id="L131"><span class="tok-comment">//             return MethodBuilder(type_args, self);</span>
+</span>
+<span class="line" id="L132"><span class="tok-comment">//         }</span>
+</span>
+<span class="line" id="L133"><span class="tok-comment">//         pub fn end(comptime self: *Self) Result {</span>
+</span>
+<span class="line" id="L134"><span class="tok-comment">//             return Result{</span>
+</span>
+<span class="line" id="L135"><span class="tok-comment">//                 .map = self.map,</span>
+</span>
+<span class="line" id="L136"><span class="tok-comment">//             };</span>
+</span>
+<span class="line" id="L137"><span class="tok-comment">//         }</span>
+</span>
+<span class="line" id="L138"><span class="tok-comment">//     };</span>
+</span>
+<span class="line" id="L139"><span class="tok-comment">// }</span>
+</span>
+<span class="line" id="L140"></span>
+</code></pre></body>
+</html>
