@@ -1,5 +1,5 @@
 const std = @import("std");
-
+const A = std.build.CreateModuleOptions;
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
@@ -14,7 +14,6 @@ pub fn build(b: *std.Build) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall. Here we do not
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
-
     const lib = b.addStaticLibrary(.{
         .name = "zig-libs-for-my-own-usage",
         // In this case the main source file is merely a path, however, in more
@@ -23,19 +22,22 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
+    const zig_validate = b.createModule(.{
+        .source_file = .{ .path = "libs/zig-validate/src/validate.zig" },
+    });
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
+    lib.addModule("validate", zig_validate);
     lib.install();
-
+    
     // Creates a step for unit testing.
     const main_tests = b.addTest(.{
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
     });
-
+    main_tests.addModule("validate", zig_validate);
     // This creates a build step. It will be visible in the `zig build --help` menu,
     // and can be selected like this: `zig build test`
     // This will evaluate the `test` step rather than the default, which is "install".
