@@ -3,7 +3,6 @@ const Allocator = std.mem.Allocator;
 const testing = std.testing;
 const meta = std.meta;
 const builtin = std.builtin;
-const Comparable = @import("comparable.zig");
 const utils = @import("utils.zig");
 const option = @This();
 /// some type that is a liite bit like rust's optional type
@@ -30,7 +29,6 @@ pub fn Option(comptime T: type) type {
         /// in future versions I will implement a general one for this type
         const allocator: Allocator = std.heap.page_allocator;
         const Self = @This();
-        const ComparedResult = Comparable.ComparedResult;
         /// it just wrapping around a optional type
         /// but this memory's ownership is holded by the type
         value: ?*T,
@@ -51,7 +49,7 @@ pub fn Option(comptime T: type) type {
         }
         /// the none value
         /// just a ownership upon null value
-        /// may be in future we will have zero bit None
+        /// maybe in future we will have zero bit None
         pub const None = Self{ .value = null };
         /// Returns true if the option is a Some value.
         pub fn is_some(self: *const Self) bool {
@@ -169,48 +167,47 @@ pub fn Option(comptime T: type) type {
         }
         /// comparable trait implementation
         /// call this function to cast this type to a self compatible type
-        pub const ComparableSelf = utils.Comparable(*Self).impl(null)(.{
-            .cmpFn = cmp,
-        });
-        /// try to implement a comparable for Option type
-        /// inner type is must be comparable or implement Comparable
-        fn cmp(self: *Self, other: Self) utils.CompareResult {
-            if (self.is_none()) {
-                if(other.is_none()) {
-                    return .Equal;
-                } else {
-                    return .Less;
-                }
-            }
-
-            var value = self.value.?.*;
-            var othervalue = other.value.?.*;
-            switch (@typeInfo(@TypeOf(value))) {
-                .Float, .Int => {
-                    if (value == othervalue) return utils.CompareResult.Equal;
-                    if (value < othervalue) return utils.CompareResult.Less;
-                    if (value > othervalue) return utils.CompareResult.Greater;
-                },
-                .Struct => {
-                    if (utils.isComparableTo(Self)(Self)) {
-                        return value.cmp(othervalue);
+        pub const ComparableSelf = struct {
+            /// try to implement a comparable for Option type
+            /// inner type is must be comparable or implement Comparable
+            pub fn cmp(self: *Self, other: *Self) utils.CompareResult {
+                if (self.is_none()) {
+                    if (other.is_none()) {
+                        return .Equal;
                     } else {
-                        @compileError("struct type " ++ @TypeOf(value) ++ "is not implemented comparable",);
+                        return .Less;
                     }
-                },
-                .Pointer => {
-                    var res = std.cstr.cmp(value, othervalue);
-                    if (res == 0) return Self.ComparedResult.Equal;
-                    if (res == 1) return Self.ComparedResult.Greater;
-                    if (res == -1) return Self.ComparedResult.Less;
-                },
-                else => {
-                    @compileError("type " ++ @typeInfo(@TypeOf(value)) ++ " are not comparable");
-                },
+                }
+
+                var value = self.value.?.*;
+                var othervalue = other.value.?.*;
+                switch (@typeInfo(@TypeOf(value))) {
+                    .Float, .Int => {
+                        if (value == othervalue) return utils.CompareResult.Equal;
+                        if (value < othervalue) return utils.CompareResult.Less;
+                        if (value > othervalue) return utils.CompareResult.Greater;
+                    },
+                    .Struct => {
+                        return utils.compare(&value, &othervalue);
+                    },
+                    .Pointer => |p| {
+                        if (p.child == u8) {
+                            var res = std.cstr.cmp(value, othervalue);
+                            if (res == 0) return Self.ComparedResult.Equal;
+                            if (res == 1) return Self.ComparedResult.Greater;
+                            if (res == -1) return Self.ComparedResult.Less;
+                        } else {
+                            return utils.compare(value, othervalue);
+                        }
+                    },
+                    else => {
+                        @compileError("type " ++ @typeInfo(@TypeOf(value)) ++ " are not comparable");
+                    },
+                }
+                unreachable;
             }
-            // will Become Error in the future
-            return Self.ComparedResult.NotComparable;
-        }
+        };
+
         // don't trying this, the ownership will be broken
         // pub fn from(optional: ?*T) Self {
         //     return Self{ .value = optional };

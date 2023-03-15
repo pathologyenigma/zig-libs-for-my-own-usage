@@ -1,0 +1,3 @@
+[submodule "libs/zig-validate"]
+	path = libs/zig-validate
+	url = https://github.com/mov-rax/zig-validate
